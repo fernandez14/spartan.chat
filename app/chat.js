@@ -12,15 +12,21 @@ const ESC_KEY = 27;
  */
 function intent(dom, socket) {
     return xs.merge(
+        // Watch all keyup events in textbox.
         dom.select('.message').events('keyup')
             .filter(e => {
                 let trimmed = String(e.target.value).trim();
                 return trimmed;
             })
             .map(e => ({type: 'message', sent: e.keyCode == ENTER_KEY, payload: String(e.target.value)})),
+
+        // Watch scroll on message list.
         dom.select('.list-container').events('scroll')
+            .compose(debounce(100))
             .map(e => ({type: 'feed-scroll', top: e.target.scrollTop, height: e.target.scrollHeight - e.target.clientHeight})),
-        xs.periodic(1000).map(i => ({type: 'message', sent: true, payload: String(i) + ' y seguimos contando....'}))
+
+        // Simulate periodic messages.
+        xs.periodic(1000).map(i => ({type: 'others-message', payload: String(i) + ' y seguimos contando....'}))
     );
 };
 
@@ -30,20 +36,18 @@ function intent(dom, socket) {
  * @returns {MemoryStream|MemoryStream<{list: Array, message: string}>}
  */
 function model(actions$) {
-    const messages$ = actions$.filter(a => a.type == 'message' && a.sent)
+    const messages$ = actions$.filter(a => a.type == 'others-message' || (a.type == 'message' && a.sent))
         .map(a => ({message: a.payload.trim()}))
-        .fold((acc, c) => acc.concat(c), []);
+        .fold((acc, c) => acc.concat(c), [])
+        .map(list => list.slice(-50));
 
     const scroll$ = actions$.filter(a => a.type == 'feed-scroll')
-        .map(a => {
-            console.log(a);
-
-            return {lock: a.top == a.height};
-        })
+        .map(a => ({lock: a.top == a.height}))
         .startWith({lock: true});
 
     const message$ = actions$.filter(a => a.type == 'message')
-        .map(a => ({message: a.sent ? '' : a.payload}));
+        .map(a => ({message: a.sent ? '' : a.payload}))
+        .startWith({message: ''});
 
     const state$ = xs.combine(messages$, message$, scroll$)
         .map(m => {
@@ -52,7 +56,7 @@ function model(actions$) {
            return {list: messages, message: current.message, lock: scroll.lock};
         });
 
-    return state$.startWith({list: [], message: '', lock: false});
+    return state$.startWith({list: [], message: '', lock: true});
 };
 
 function view(state$) {
@@ -60,15 +64,17 @@ function view(state$) {
         return div('.mw7.center.sans-serif', [
             h1('.tc', 'SpartanGeek'),
             div('.ba.pa3.h6.b--silver.overflow-auto.list-container', {style: {maxHeight: '250px'}}, [
-                ul('.list.pa0.ma0', {
-                    hook: {
-                        update: vnode => {
-                            if (state.lock) {
-                                vnode.elm.parentElement.scrollTop = vnode.elm.offsetHeight;
+                ul('.list.pa0.ma0', state.list.map(item => {
+                    return li('.pv2', {
+                        hook: {
+                            insert: vnode => {
+                                if (state.lock) {
+                                    vnode.elm.parentElement.parentElement.scrollTop = vnode.elm.parentElement.offsetHeight;
+                                }
                             }
                         }
-                    }
-                }, state.list.map(item => li('.mb2', item.message)))
+                    }, item.message);
+                }))
             ]),
             div('.pv3', [
                 input('.pa2.input-reset.ba.bg-black.b--black.white.w-100.message', {

@@ -8,26 +8,22 @@ const ESC_KEY = 27;
 /**
  *
  * @param dom
- * @returns {Stream|Stream<T1>}
  */
 function intent(dom, socket) {
-    return xs.merge(
-        // Watch all keyup events in textbox.
-        dom.select('.message').events('keyup')
-            .filter(e => {
-                let trimmed = String(e.target.value).trim();
-                return trimmed;
-            })
-            .map(e => ({type: 'message', sent: e.keyCode == ENTER_KEY, payload: String(e.target.value)})),
+    const msg$ = dom.select('.message').events('keyup')
+        .filter(e => {
+            let trimmed = String(e.target.value).trim();
+            return trimmed;
+        })
+        .map(e => ({type: 'message', sent: e.keyCode == ENTER_KEY, payload: String(e.target.value)}));
 
-        // Watch scroll on message list.
-        dom.select('.list-container').events('scroll')
-            .compose(debounce(50))
-            .map(e => ({type: 'feed-scroll', top: e.target.scrollTop, height: e.target.scrollHeight - e.target.clientHeight})),
+    const scroll$ = dom.select('.list-container').events('scroll')
+            .compose(debounce(25))
+            .map(e => ({type: 'feed-scroll', top: e.target.scrollTop, height: e.target.scrollHeight - e.target.clientHeight}));
 
-        // Simulate periodic messages.
-        xs.periodic(1000).map(i => ({type: 'others-message', payload: String(i) + ' y seguimos contando....'}))
-    );
+    const messages$ = socket.get('chat dia-de-hueva');
+
+    return {msg$, scroll$, messages$};
 };
 
 /**
@@ -35,28 +31,38 @@ function intent(dom, socket) {
  * @param actions$
  * @returns {MemoryStream|MemoryStream<{list: Array, message: string}>}
  */
-function model(actions$) {
-    const messages$ = actions$.filter(a => a.type == 'others-message' || (a.type == 'message' && a.sent))
-        .map(a => ({message: a.payload.trim(), author: {id: 'unknown', name: 'nobody', avatar: 'http://via.placeholder.com/40x40'}}))
-        .fold((acc, c) => acc.concat(c), [])
-        .map(list => list.slice(-50));
-
-    const scroll$ = actions$.filter(a => a.type == 'feed-scroll')
+function model(actions) {
+    const scroll$ = actions.scroll$
         .map(a => ({lock: a.top == a.height}))
-        .startWith({lock: true});
-
-    const message$ = actions$.filter(a => a.type == 'message')
-        .map(a => ({message: a.sent ? '' : a.payload}))
-        .startWith({message: ''});
-
-    const state$ = xs.combine(messages$, message$, scroll$)
-        .map(m => {
-           let [messages, current, scroll] = m;
-
-           return {list: messages, message: current.message, lock: scroll.lock};
+        .startWith({lock: true})
+        .map(status => {
+            return state => Object.assign({}, state, {lock: status.lock});
         });
 
-    return state$.startWith({list: [], message: '', lock: true});
+    const message$ = actions.msg$
+        .map(message => {
+            return state => Object.assign({}, state, {message: message.sent ? '' : message.payload})
+        }); 
+
+    const sent$ = actions.msg$.filter(m => m.sent)
+        .map(m => ({content: m.payload.trim(), user_id: 'nobody', username: 'nobody', avatar: false}));
+
+    const packed$ = sent$.map(m => ({list: [m]}));
+    const messages$ = xs.merge(actions.messages$, packed$)
+        .map(packed => {
+            return state => Object.assign({}, state, {list: state.list.concat(packed.list)});
+        });
+
+    const state$ = xs.merge(messages$, message$, scroll$)
+        .fold((state, action) => {
+            return action(state);
+        }, {list: [], message: '', lock: true})
+        .startWith({list: [], message: '', lock: true});
+
+    return {
+        state$,
+        sent$
+    };
 };
 
 function view(state$) {
@@ -65,7 +71,7 @@ function view(state$) {
             h1('.tc', 'SpartanGeek'),
             div('.ba.pa3.h6.b--silver.overflow-auto.list-container', {style: {maxHeight: '250px'}}, [
                 ul('.list.pa0.ma0', state.list.map((item, index, list) => {
-                    const simple = index > 0 && list[index-1].author.id == item.author.id;
+                    const simple = index > 0 && list[index-1].user_id == item.user_id;
 
                     return li('.dt' + (simple == false ? '.pv2' : '.pb2'), {
                         hook: {
@@ -76,10 +82,10 @@ function view(state$) {
                             }
                         }
                     }, [
-                        div('.dtc.w2', simple == false ? img({attrs: {src: item.author.avatar}}) : ''),
+                        div('.dtc.w2', simple == false ? img({attrs: {src: item.avatar ? item.avatar : 'http://via.placeholder.com/40x40'}}) : ''),
                         div('.dtc.v-top.pl3', [
-                            simple == false ? span('.f6.f5-ns.fw6.lh-title.black.db.mb1', item.author.name) : '',
-                            p('.f6.fw4.mt0.mb0.black-60', item.message)
+                            simple == false ? span('.f6.f5-ns.fw6.lh-title.black.db.mb1', item.username) : '',
+                            p('.f6.fw4.mt0.mb0.black-60', item.content)
                         ])
                     ]);
                 }))
@@ -99,10 +105,15 @@ function view(state$) {
 
 export function Chat(sources) {
     const actions$ = intent(sources.DOM, sources.socketIO);
-    const state$ = model(actions$);
-    const vtree$ = view(state$);
+    const model$ = model(actions$);
+    const vtree$ = view(model$.state$);
+
+    const sent$ = model$.sent$
+        .map(message => (["chat send", "dia-de-hueva", message.content]))
+        .startWith(['chat update-me', 'dia-de-hueva']);
 
     return {
-        DOM: vtree$
+        DOM: vtree$,
+        socketIO: sent$
     };
 };

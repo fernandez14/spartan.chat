@@ -12,6 +12,7 @@
   "dependencies": {
     "@cycle/dom": "^17.4.0",
     "@cycle/run": "^3.1.0",
+    "babel-preset-stage-2": "^6.24.1",
     "cycle-socket.io": "^4.0.0",
     "socket.io-client": "^2.0.2",
     "tachyons": "4.7.0",

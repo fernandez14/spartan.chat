@@ -11,10 +11,13 @@ exports.files = {
 
 exports.npm = {
     styles: {
-        tachyons: ['css/tachyons.css']
+        //tachyons: ['css/tachyons.css']
     }
 };
 
 exports.plugins = {
-    babel: {presets: ['latest', 'stage-2']}
+    babel: {presets: ['latest', 'stage-2']},
+    less: {
+      modules: true
+    }
 };

@@ -18,6 +18,6 @@ exports.npm = {
 exports.plugins = {
     babel: {presets: ['latest', 'stage-2']},
     less: {
-      modules: true
+      
     }
 };

@@ -284,7 +284,7 @@ function view(state$) {
                 "name": "style",
                 "value": "color: #3DE179;"
             }
-        }), "&nbsp;&nbsp;N Spartanos conectados&nbsp;&nbsp;"]) : "", !users2 ? (0, _dom.i)('.fa.fa-angle-double-right') : "", users2 ? (0, _dom.i)('.fa.fa-angle-double-left') : ""])])]), users2 ? (0, _dom.div)('.detail-section-chat.users', [(0, _dom.div)(".search-box", [(0, _dom.div)(".input-group", [(0, _dom.div)(".input-group-addon", [(0, _dom.i)(".fa.fa-search", {
+        }), " N Spartanos conectados "]) : "", !users2 ? (0, _dom.i)('.fa.fa-angle-double-right') : "", users2 ? (0, _dom.i)('.fa.fa-angle-double-left') : ""])])]), users2 ? (0, _dom.div)('.detail-section-chat.users', [(0, _dom.div)(".search-box", [(0, _dom.div)(".input-group", [(0, _dom.div)(".input-group-addon", [(0, _dom.i)(".fa.fa-search", {
             "attributes": {
                 "aria-hidden": "true",
                 "className": "fa fa-search"
@@ -314,7 +314,7 @@ function view(state$) {
             },
             class: { b: state.channel == 'dia-de-hueva', "active": state.channel == 'dia-de-hueva' },
             dataset: { id: 'dia-de-hueva' }
-        }, ['D\xEDa de hueva'])])]), (0, _dom.div)('.detail-section', [(0, _dom.div)(['youtube-media']), favorite.status ? (0, _dom.div)('.favorite-comment') : "", show_details && admin ? (0, _dom.div)('.detail-section', [(0, _dom.h4)(["Configuración"]), (0, _dom.form)('.form-inline', [(0, _dom.div)('.form-group', [label(['Código de Youtube']), (0, _dom.input)("#yt-code.form-control", {
+        }, ['D\xEDa de hueva'])])]), (0, _dom.div)('.detail-section', [(0, _dom.div)(['youtube-media']), favorite.status ? (0, _dom.div)('.favorite-comment') : "", show_details && admin ? (0, _dom.div)('.detail-section', [(0, _dom.h4)(["Configuración"]), (0, _dom.form)('.form-inline', [(0, _dom.div)('.form-group', [(0, _dom.label)(['Código de Youtube']), (0, _dom.input)("#yt-code.form-control", {
             "attributes": {
                 "type": "text",
                 "placeholder": "abcde123"
@@ -323,7 +323,7 @@ function view(state$) {
             "attributes": {
                 "type": "submit"
             }
-        }, ['Actualizar video'])])]) : ""])])]) : "", (0, _dom.div)('#page-members-wrapper', { class: { "no-stream": !stream, "users": users2 } }, [admin && show_details && !stream ? (0, _dom.div)('.detail-section-admin', [(0, _dom.h4)(["Configuración"]), (0, _dom.form)('.form-inline', [(0, _dom.div)('.form-group', [label(['Código de Youtube']), (0, _dom.input)("#yt-code.form-control", {
+        }, ['Actualizar video'])])]) : ""])])]) : "", (0, _dom.div)('#page-members-wrapper', { class: { "no-stream": !stream, "users": users2 } }, [admin && show_details && !stream ? (0, _dom.div)('.detail-section-admin', [(0, _dom.h4)(["Configuración"]), (0, _dom.form)('.form-inline', [(0, _dom.div)('.form-group', [(0, _dom.label)(['Código de Youtube']), (0, _dom.input)("#yt-code.form-control", {
             "attributes": {
                 "type": "text",
                 "placeholder": "abcde123"

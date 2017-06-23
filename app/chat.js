@@ -1,4 +1,4 @@
-import {div, h1, input, ul, li, img, span, p, a, i, textarea, button, form, h4} from '@cycle/dom';
+import {div, h1, input, ul, li, img, span, p, a, i, textarea, button, form, h4, label} from '@cycle/dom';
 import xs from 'xstream';
 import debounce from 'xstream/extra/debounce';
 
@@ -113,7 +113,7 @@ function view(state$) {
                                                 "value": "color: #3DE179;"
                                             }
                                         }),
-                                        "&nbsp;&nbsp;N Spartanos conectados&nbsp;&nbsp;"
+                                        " N Spartanos conectados "
                                     ]):"",
                                     !users2 ? i('.fa.fa-angle-double-right'):"",
                                     users2 ? i('.fa.fa-angle-double-left'):"",

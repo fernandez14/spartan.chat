@@ -390,7 +390,11 @@ function view(state$) {
             "attributes": {
                 "title": "Configurar este canal"
             }
-        }, [(0, _dom.i)(".fa.fa-fw.fa-info-circle.icon")]) : ""])]) : "", !users ? (0, _dom.div)('.detail-section-chat', { class: { "stream": !stream } }, [(0, _dom.div)('.content-chat', [(0, _dom.div)('.message-history', state.list.map(function (item, index, list) {
+        }, [(0, _dom.i)(".fa.fa-fw.fa-info-circle.icon")]) : ""])]) : "",
+        /********************************************************************* 
+         * Chat messages
+         *********************************************************************/
+        !users ? (0, _dom.div)('.detail-section-chat', { class: { "stream": !stream } }, [(0, _dom.div)('.content-chat', [(0, _dom.div)('.message-history', state.list.map(function (item, index, list) {
             var simple = index > 0 && list[index - 1].user_id == item.user_id;
             var tzoffset = new Date(item.timestamp).getTimezoneOffset() * 60000;
             var formattedTime = new Date(Date.now() - tzoffset).toISOString().slice(-13, -5);
@@ -409,7 +413,11 @@ function view(state$) {
                 placeholder: 'Escribe tu mensaje...',
                 value: state.message
             }
-        })])])])])]) : "", users ? (0, _dom.div)('.detail-section-chat.users', { class: { "stream": !stream } }, [(0, _dom.div)(".search-box", [(0, _dom.div)(".input-group", [(0, _dom.div)(".input-group-addon", [(0, _dom.i)(".fa.fa-search", {
+        })])])])])]) : "",
+        /********************************************************************* 
+         * End Chat messages
+         *********************************************************************/
+        users ? (0, _dom.div)('.detail-section-chat.users', { class: { "stream": !stream } }, [(0, _dom.div)(".search-box", [(0, _dom.div)(".input-group", [(0, _dom.div)(".input-group-addon", [(0, _dom.i)(".fa.fa-search", {
             "attributes": {
                 "aria-hidden": "true"
             }

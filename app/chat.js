@@ -312,6 +312,9 @@ function view(state$) {
                                 ]):""
                             ])
                         ]):"",
+                        /********************************************************************* 
+                         * Chat messages
+                         *********************************************************************/
                         !users ? div('.detail-section-chat',{class: {"stream": !stream}},[
                             div('.content-chat',[
                                 div('.message-history', state.list.map((item, index, list) => {
@@ -352,6 +355,9 @@ function view(state$) {
                                 ])
                             ])
                         ]):"",
+                        /********************************************************************* 
+                         * End Chat messages
+                         *********************************************************************/
                         users ? div('.detail-section-chat.users',{class: {"stream": !stream}},[
                             div(".search-box", [
                                 div(".input-group", [

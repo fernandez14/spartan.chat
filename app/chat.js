@@ -44,7 +44,7 @@ function model(actions) {
         .map(a => ({lock: a.top == a.height}))
         .startWith({lock: true})
         .map(status => {
-            return state => Object.assign({}, state, {lock: status.lock});
+            return state => Object.assign({}, state, {lock: status.lock, missing: status.lock === true ? 0 : state.missing});
         });
 
     const currentChannel$ = actions.channel$
@@ -63,12 +63,12 @@ function model(actions) {
         }); 
 
     const sent$ = actions.msg$.filter(m => m.sent)
-        .map(m => ({content: m.payload.trim(), user_id: 'nobody', username: 'nobody', avatar: false}));
+        .map(m => ({content: m.payload.trim(), user_id: 'nobody', username: 'nobody', avatar: false, timestamp: (new Date()).getTime()}));
 
     const packed$ = sent$.map(m => ({list: [m]}));
     const messages$ = xs.merge(actions.messages$, packed$)
         .map(packed => {
-            return state => Object.assign({}, state, {list: state.list.concat(packed.list)});
+            return state => Object.assign({}, state, {list: state.list.concat(packed.list), missing: state.lock === false ? state.missing + packed.list.length : state.missing});
         });
 
     /**
@@ -77,8 +77,8 @@ function model(actions) {
      * @type {*}
      */
     const state$ = xs.merge(messages$, message$, scroll$, currentChannel$, showVideo$)
-        .fold((state, action) => action(state), {list: [], message: '', lock: true, channel: 'general'})
-        .startWith({list: [], message: '', lock: true, channel: 'general', player: false});
+        .fold((state, action) => action(state), {list: [], message: '', lock: true, channel: 'general', player: false, missing: 0})
+        .startWith({list: [], message: '', lock: true, channel: 'general', player: false, missing: 0});
 
     const socketSend$ = xs.combine(sent$, actions.channel$).map(send => (['chat send', send[1], send[0].content]));
     const socketChannel$ = actions.channel$.map(channel => (['chat update-me', channel]));
@@ -98,14 +98,14 @@ function view(state$) {
                 iframe('.bn.br2', {props: {width: '100%', height: 400, src: "https://www.youtube.com/embed/d8T7EqoYc3w", frameborder: 0, allowfullscreen: true}})
             ]),
             div('.fl', {class: {'w-100': state.player === false, 'w-40': state.player}, style: {minHeight: '100vh'}}, [
-                div('.bg-white.br2.shadow', {style: {marginTop: '10vh'}}, [
+                div('.bg-white.br2.shadow.relative', {style: {marginTop: '10vh'}}, [
                     nav('.pa3.ma0.bg-light-gray.tc.bb.b--black-10', [
                         a('.link.black-60.channel.ph2.pointer', {class: {b: state.channel == 'general'}, dataset: {id: 'general'}}, 'General'),
                         a('.link.black-60.dark.channel.ph2.pointer', {class: {b: state.channel == 'dia-de-hueva'}, dataset: {id: 'dia-de-hueva'}}, 'Día de hueva')
                     ]),
-                    div('.pv3.h6.overflow-auto.list-container', {style: {minHeight: '60vh', maxHeight: '60vh'}}, [
+                    div('.pv3.h6.overflow-auto.list-container.relative', {style: {minHeight: '60vh', maxHeight: '60vh'}}, [
                         ul('.list.pa0.ma0', state.list.map((item, index, list) => {
-                            const simple = index > 0 && list[index-1].user_id == item.user_id;
+                            const simple = index > 0 && list[index-1].user_id === item.user_id;
 
                             return li('.dt.hover-bg-near-white.w-100.ph3.pv2', {
                                 hook: {
@@ -122,7 +122,10 @@ function view(state$) {
                                     p('.f6.fw4.mt0.mb0.black-60', item.content)
                                 ])
                             ]);
-                        }))
+                        })),
+                    ]),
+                    div('.white.bg-blue.absolute.pa2.ph3.br2.f6', {class: {dn: state.missing === 0}, style: {bottom: '90px', right: '1rem'}}, [
+                        `${state.missing} nuevos mensajes`
                     ]),
                     div('.pa3.bt.b--light-gray', [
                         input('.pa2.input-reset.ba.bg-white.b--light-gray.bw1.near-black.w-100.message.br2.outline-0', {
@@ -133,7 +136,7 @@ function view(state$) {
                                 value: state.message
                             }
                         })
-                    ])
+                    ]),
                 ])
             ])
         ]);

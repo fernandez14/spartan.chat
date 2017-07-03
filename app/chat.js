@@ -1,15 +1,62 @@
-import {div, h1, input, ul, li, img, span, p, a, iframe, nav} from '@cycle/dom';
+import {div, h1, input, ul, li, img, span, p, a, b, iframe, nav} from '@cycle/dom';
 import xs from 'xstream';
 import debounce from 'xstream/extra/debounce';
 
 const ENTER_KEY = 13;
 const ESC_KEY = 27;
+const CONFIG = {
+    channels: {
+        'general': {
+            name: 'General',
+            youtubePlayer: false,
+            youtubeVideo: ''
+        },
+        'dia-de-hueva': {
+            name: 'Día de hueva',
+            youtubePlayer: false,
+            youtubeVideo: ''
+        }
+    }
+};
+
+const GUEST_USER = {
+    _id: false,
+    username: 'guest',
+    image: '',
+    role: 'guest'
+};
+
+const DEFAULT_STATE = {
+    config: CONFIG,
+    list: [],
+    message: '',
+    lock: true,
+    channel: 'general',
+    player: false,
+    missing: 0
+};
 
 /**
  *
  * @param dom
  */
 function intent(dom, socket) {
+
+    /**
+     * Some initial data will come right outta socket.io.
+     *
+     * This allows dynamic config & socket auth.
+     */
+    const signature$ = socket.get('user signature');
+    const config$ = socket.get('config');
+
+    /**
+     * DOM intents including:
+     *
+     * - keyups from message box
+     * - scroll on messages container
+     * - change channel clicks
+     */
     const msg$ = dom.select('.message').events('keyup')
         .filter(e => {
             let trimmed = String(e.target.value).trim();
@@ -31,7 +78,7 @@ function intent(dom, socket) {
 
     const messages$ = channel$.map(name => socket.get('chat ' + name)).flatten();
 
-    return {msg$, scroll$, messages$, channel$, video$};
+    return {config$, signature$, msg$, scroll$, messages$, channel$, video$};
 };
 
 /**
@@ -40,6 +87,14 @@ function intent(dom, socket) {
  * @returns {MemoryStream|MemoryStream<{list: Array, message: string}>}
  */
 function model(actions) {
+    const currentUser$ = actions.signature$.startWith(GUEST_USER);
+
+    const remoteConfig$ = actions.config$
+        .map(config => {
+            console.log('configured from remote');
+            return state => Object.assign({}, state, {config});
+        });
+
     const scroll$ = actions.scroll$
         .map(a => ({lock: a.top == a.height}))
         .startWith({lock: true})
@@ -60,10 +115,20 @@ function model(actions) {
     const message$ = actions.msg$
         .map(message => {
             return state => Object.assign({}, state, {message: message.sent ? '' : message.payload})
-        }); 
+        });
 
-    const sent$ = actions.msg$.filter(m => m.sent)
-        .map(m => ({content: m.payload.trim(), user_id: 'nobody', username: 'nobody', avatar: false, timestamp: (new Date()).getTime()}));
+    const sent$ = xs.combine(currentUser$, actions.msg$.filter(m => m.sent))
+        .map(data => {
+            const [user, message] = data;
+
+            return {
+                content: message.payload.trim(),
+                user_id: user._id,
+                username: user.username,
+                image: user.image,
+                timestamp: (new Date()).getTime()
+            };
+        });
 
     const packed$ = sent$.map(m => ({list: [m]}));
     const messages$ = xs.merge(actions.messages$, packed$)
@@ -76,9 +141,9 @@ function model(actions) {
      *
      * @type {*}
      */
-    const state$ = xs.merge(messages$, message$, scroll$, currentChannel$, showVideo$)
-        .fold((state, action) => action(state), {list: [], message: '', lock: true, channel: 'general', player: false, missing: 0})
-        .startWith({list: [], message: '', lock: true, channel: 'general', player: false, missing: 0});
+    const state$ = xs.merge(remoteConfig$, messages$, message$, scroll$, currentChannel$, showVideo$)
+        .fold((state, action) => action(state), DEFAULT_STATE)
+        .startWith(DEFAULT_STATE);
 
     const socketSend$ = xs.combine(sent$, actions.channel$).map(send => (['chat send', send[1], send[0].content]));
     const socketChannel$ = actions.channel$.map(channel => (['chat update-me', channel]));
@@ -92,18 +157,27 @@ function model(actions) {
 
 function view(state$) {
     return state$.map(state => {
-        return div('.mw9.center.sans-serif.cf.ph4', [
-            div('.fl.fade-in.w-60.ph4', {class: {dn: state.player === false}, style: {minHeight: '100vh', paddingTop: '10vh'}}, [
-                //<iframe width="560" height="315" src="https://www.youtube.com/embed/d8T7EqoYc3w" frameborder="0" allowfullscreen></iframe>
-                iframe('.bn.br2', {props: {width: '100%', height: 400, src: "https://www.youtube.com/embed/d8T7EqoYc3w", frameborder: 0, allowfullscreen: true}})
+        const channel = state.config.channels[state.channel];
+
+        return div('.mw9.center.sans-serif.cf.flex.flex-column.flex-row-ns', {style: {height: '100%'}}, [
+            div('.fade-in.w-100.pl4-ns.pt4-ns', {class: {dn: channel.youtubePlayer === false}}, [
+                channel.youtubePlayer === false ? null : iframe('.bn.br2', {
+                    props: {
+                        width: '100%',
+                        height: '300',
+                        src: `https://www.youtube.com/embed/${channel.youtubeVideo}`,
+                        frameborder: 0,
+                        allowfullscreen: true
+                    }
+                })
             ]),
-            div('.fl', {class: {'w-100': state.player === false, 'w-40': state.player}, style: {minHeight: '100vh'}}, [
-                div('.bg-white.br2.shadow.relative', {style: {marginTop: '10vh'}}, [
-                    nav('.pa3.ma0.bg-light-gray.tc.bb.b--black-10', [
+            div('.w-100.flex-auto.flex.pa4-ns', [
+                div('.bg-white.br2.flex-auto.shadow.relative.flex.flex-column', [
+                    nav('.pa3.ma0.bg-light-gray.tc.bb.b--black-05', {style: {flex: '0 1 auto'}}, [
                         a('.link.black-60.channel.ph2.pointer', {class: {b: state.channel == 'general'}, dataset: {id: 'general'}}, 'General'),
                         a('.link.black-60.dark.channel.ph2.pointer', {class: {b: state.channel == 'dia-de-hueva'}, dataset: {id: 'dia-de-hueva'}}, 'Día de hueva')
                     ]),
-                    div('.pv3.h6.overflow-auto.list-container.relative', {style: {minHeight: '60vh', maxHeight: '60vh'}}, [
+                    div('.pv3.h6.overflow-auto.list-container.relative', {style: {flex: '1 1 auto'}}, [
                         ul('.list.pa0.ma0', state.list.map((item, index, list) => {
                             const simple = index > 0 && list[index-1].user_id === item.user_id;
 
@@ -116,7 +190,7 @@ function view(state$) {
                                     }
                                 }
                             }, [
-                                div('.dtc.w2', simple == false ? img({attrs: {src: item.avatar ? item.avatar : 'http://via.placeholder.com/40x40'}}) : span('.f7.silver', hour(item.timestamp))),
+                                div('.dtc.w2', simple == false ? img({attrs: {src: item.image ? item.image : 'http://via.placeholder.com/40x40'}}) : span('.f7.silver', hour(item.timestamp))),
                                 div('.dtc.v-top.pl3', [
                                     simple == false ? span('.f6.f5-ns.fw6.lh-title.black.db.mb1', item.username) : '',
                                     p('.f6.fw4.mt0.mb0.black-60', item.content)
@@ -125,9 +199,10 @@ function view(state$) {
                         })),
                     ]),
                     div('.white.bg-blue.absolute.pa2.ph3.br2.f6', {class: {dn: state.missing === 0}, style: {bottom: '90px', right: '1rem'}}, [
-                        `${state.missing} nuevos mensajes`
+                        b(state.missing),
+                        span(' nuevos mensajes')
                     ]),
-                    div('.pa3.bt.b--light-gray', [
+                    div('.pa3.bt.b--light-gray', {style: {flex: '0 1 auto'}}, [
                         input('.pa2.input-reset.ba.bg-white.b--light-gray.bw1.near-black.w-100.message.br2.outline-0', {
                             props: {
                                 autofocus: true,
@@ -163,10 +238,10 @@ function addZero(i) {
 
 
 function hour(ts) {
-    const d = new Date(ts * 1000);
+    const d = new Date(ts);
     const h = addZero(d.getHours());
     const m = addZero(d.getMinutes());
     const s = addZero(d.getSeconds());
 
-    return h + ":" + m + ":" + s;
+    return h + ":" + m;
 }

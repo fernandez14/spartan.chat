@@ -49,7 +49,15 @@ const roles = {
 io.use(jwt.authorize({
     secret: program.jwt_secret,
     handshake: true,
-    required: false
+    fail: function (error, data, accept) {
+        console.log('Could not authorize connected client.')
+
+        if (data.request) {
+            accept();
+        } else {
+            accept(null, true);
+        }
+    }
 }));
 
 const zmq$ = xs.createWithMemory({
@@ -65,7 +73,8 @@ const zmq$ = xs.createWithMemory({
 });
 
 io.on('connection', function(socket) {
-    const user_id = socket.decoded_token.user_id || false;
+    const token = socket.decoded_token || {};
+    const user_id = token.user_id || false;
     const global = {
         next(incoming) {
             socket.emit(incoming.event, incoming.message);

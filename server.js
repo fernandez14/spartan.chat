@@ -148,7 +148,7 @@ io.on('connection', function(socket) {
     }
 
     socket.on('user me', function() {
-        socket.emit('user signature', {id: false, username: 'guest', image: false, role: 'guest'});
+        socket.emit('user signature', {_id: false, username: 'guest', image: false, role: 'guest'});
     });
 });
 

@@ -248,15 +248,6 @@ function view(state$) {
         const channel = state.config.channels[state.channel];
         const nrole = ROLES[state.user.role];
         const role = new Array(nrole).fill();
-        const scrollHook = {
-            hook: {
-                insert: vnode => {
-                    if (state.lock) {
-                        vnode.elm.parentElement.parentElement.scrollTop = vnode.elm.parentElement.offsetHeight;
-                    }
-                }
-            }
-        };
 
         return main({style: {height: '100%', paddingTop: '62px'}}, [
             header('.bg-blue.pv2.ph4.absolute.top-0.left-0.w-100', nav('.mw9.center', [
@@ -310,6 +301,15 @@ function view(state$) {
                             ul('.list.pa0.ma0', state.list.map((command, index, list) => {
                                 const type = command.type;
                                 const data = command.data;
+                                const scrollHook = {
+                                    hook: {
+                                        insert: vnode => {
+                                            if (state.lock) {
+                                                vnode.elm.parentElement.parentElement.scrollTop = vnode.elm.parentElement.offsetHeight;
+                                            }
+                                        }
+                                    }
+                                };
 
                                 return commandView(type, data, list, index, scrollHook);
                             })),

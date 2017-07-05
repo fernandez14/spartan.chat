@@ -48,7 +48,8 @@ const roles = {
 
 io.use(jwt.authorize({
     secret: program.jwt_secret,
-    handshake: true
+    handshake: true,
+    required: false
 }));
 
 const zmq$ = xs.createWithMemory({

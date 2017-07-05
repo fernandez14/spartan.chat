@@ -5,10 +5,16 @@ import {makeSocketIODriver} from './socket';
 import {Chat} from './chat';
 
 document.addEventListener('DOMContentLoaded', () => {
-    const socket = io('http://localhost:3100', {
+    const token = localStorage.getItem('id_token');
+    let params = {
         forceNew: true,
-        'query': 'token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNTY4YjA5ZjY3YTQ3ODAyY2EzNmNhMTE0Iiwic2NvcGUiOlsidXNlciIsImRldmVsb3BlciJdLCJleHAiOjE1MDI3MTQxMzksImlzcyI6InNwYXJ0YW5nZWVrIn0.Aw9e8AwV9LELO6FXqHhVx6z89u9JPkjVD_MBnuUNe00'
-    });
+    };
+
+    if (token !== null && String(token).length > 0) {
+        params['query'] = 'token=' + token;
+    }
+
+    const socket = io('//spartangeek.com/transmit/', params);
     socket.on('connect', () => {
         socket.emit('user me');
     });

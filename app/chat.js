@@ -272,8 +272,8 @@ function view(state$) {
                     a('.dib.v-mid.white-80.hover-white.pointer.pl4.link', {attrs: {href: 'https://spartangeek.com/asistente/'}}, 'Pedir PC Spartana'),
                 ]),
                 div('.dib.v-mid.w-30.tr', state.user._id == false ? [
-                    a('.dib.pa2.white-80.ph3', {attrs: {href: 'https://spartangeek.com/'}}, 'Iniciar sesión'),
-                    a('.dib.pa2.white-80.bg-black-80.ph3.br2.ba.b--black-30.ml2', {attrs: {href: 'https://spartangeek.com/'}}, 'Unirme')
+                    a('.dib.pa2.white-80.ph3.link', {attrs: {href: 'https://spartangeek.com/'}}, 'Iniciar sesión'),
+                    a('.dib.pa2.white-80.bg-black-80.ph3.br2.ba.b--black-30.ml2.link', {attrs: {href: 'https://spartangeek.com/'}}, 'Unirme')
                 ] : [
                     a('.dib.v-mid.white-80.pointer.ph3', state.user.username),
                     img('.dib.v-mid.br-100', {
@@ -328,10 +328,17 @@ function view(state$) {
                                     type: 'text',
                                     placeholder: 'Escribe tu mensaje aquí',
                                     value: state.message,
-                                    disabled: state.user.id == false
+                                    disabled: state.user._id === false
                                 }
                             }),
-                            state.user.id == false ? div('.absolute', 'No puedes escribir como invitado.') : null
+                            state.user._id === false ? div('.absolute.top-0.left-0.w-100.tc.bg-near-black.white-90.pv2.h-100', [
+                                div('.dib.v-mid.pv3', [
+                                    a('.link.underline.white', {attrs: {href: 'https://spartangeek.com'}}, 'Únete'),
+                                    ' o ',
+                                    a('.link.underline.white', {attrs: {href: 'https://spartangeek.com'}}, 'Inicia sesión'),
+                                    ' para escribir en el chat.'
+                                ])
+                            ]) : null
                         ]),
                     ])
                 ])

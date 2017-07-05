@@ -6,14 +6,17 @@ exports.list = function (...messages) {
 
 exports.userMessage = function (user, message) {
     return {
-        user_id: user._id,
-        username: user.username,
-        image: user.image,
-        role: 'developer',
-        content: message.trim(),
-        timestamp: (new Date()).getTime()
+        type: 'MESSAGE',
+        data: {
+            user_id: user._id,
+            username: user.username,
+            image: user.image,
+            role: user.role,
+            content: message.trim(),
+            timestamp: (new Date()).getTime()
+        }
     };
-}
+};
 
 var history = {};
 
@@ -31,5 +34,5 @@ exports.lastMessages = function (channel) {
 exports.pushHistory = function (channel, message) {
     const messages = history[channel] || [];
 
-    history[channel] = messages.concat([message]);
+    history[channel] = messages.concat([message]).slice(-100);
 };

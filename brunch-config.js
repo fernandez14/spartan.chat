@@ -16,5 +16,5 @@ exports.npm = {
 };
 
 exports.plugins = {
-    babel: {presets: ['latest', 'stage-2']}
+    babel: {presets: ['latest', 'stage-2'], plugins: ['transform-object-rest-spread']}
 };

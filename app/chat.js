@@ -1,4 +1,4 @@
-import {div, h1, input, ul, li, img, span, p, a, b, iframe, nav} from '@cycle/dom';
+import {main, header, div, h1, input, ul, li, img, span, p, a, b, iframe, nav} from '@cycle/dom';
 import xs from 'xstream';
 import debounce from 'xstream/extra/debounce';
 
@@ -9,7 +9,8 @@ const CONFIG = {
         'general': {
             name: 'General',
             youtubePlayer: false,
-            youtubeVideo: ''
+            youtubeVideo: '',
+            headline: ''
         },
         'dia-de-hueva': {
             name: 'Día de hueva',
@@ -33,8 +34,43 @@ const DEFAULT_STATE = {
     lock: true,
     channel: 'general',
     player: false,
-    missing: 0
+    missing: 0,
+    user: GUEST_USER
 };
+
+const ROLES = {
+    'guest': 0,
+    'user': 0,
+    'category-moderator': 1,
+    'super-moderator': 2,
+    'administrator': 3,
+    'developer': 4
+};
+
+const Loggers = {
+    muted: (author, user) => {
+        return `${author.username} ha silenciado a ${user.username} por 5 minutos.`;
+    }
+}
+
+function list(...messages) {
+    return {list: messages};
+}
+
+function message(data) {
+    return {type: 'MESSAGE', data};
+}
+
+function cmessage(user, message, date) {
+    return {
+        content: message.payload.trim(),
+        user_id: user._id,
+        username: user.username,
+        image: user.image,
+        role: user.role,
+        timestamp: date.getTime()
+    };
+}
 
 /**
  *
@@ -49,6 +85,7 @@ function intent(dom, socket) {
      */
     const signature$ = socket.get('user signature');
     const config$ = socket.get('config');
+    const actionsLog$ = socket.get('log');
 
     /**
      * DOM intents including:
@@ -76,9 +113,13 @@ function intent(dom, socket) {
         .map(channel => channel == 'dia-de-hueva')
         .startWith(false);
 
-    const messages$ = channel$.map(name => socket.get('chat ' + name)).flatten();
+    const mute$ = dom.select('.mute').events('click')
+        .map(e => (e.target.dataset.user_id));
 
-    return {config$, signature$, msg$, scroll$, messages$, channel$, video$};
+    const channelMessages$ = channel$.map(name => socket.get('chat ' + name)).flatten();
+    const messages$ = xs.merge(channelMessages$, actionsLog$);
+
+    return {config$, actionsLog$, signature$, msg$, scroll$, messages$, channel$, video$, mute$};
 };
 
 /**
@@ -91,7 +132,6 @@ function model(actions) {
 
     const remoteConfig$ = actions.config$
         .map(config => {
-            console.log('configured from remote');
             return state => Object.assign({}, state, {config});
         });
 
@@ -107,6 +147,10 @@ function model(actions) {
             return state => Object.assign({}, state, {channel: channel, list: [], lock: true});
         });
 
+    const userReducer$ = currentUser$.map(user => {
+        return state => Object.assign({}, state, {user});
+    })
+
     const showVideo$ = actions.video$
         .map(player => {
             return state => Object.assign({}, state, {player});
@@ -117,21 +161,20 @@ function model(actions) {
             return state => Object.assign({}, state, {message: message.sent ? '' : message.payload})
         });
 
+    /**
+     * Transform sent messages to packed list of actual commands.
+     *
+     * @type {Stream<U>|Stream}
+     */
     const sent$ = xs.combine(currentUser$, actions.msg$.filter(m => m.sent))
         .map(data => {
-            const [user, message] = data;
+            const [user, msg] = data;
 
-            return {
-                content: message.payload.trim(),
-                user_id: user._id,
-                username: user.username,
-                image: user.image,
-                timestamp: (new Date()).getTime()
-            };
+            return message(cmessage(user, msg, new Date()));
         });
 
-    const packed$ = sent$.map(m => ({list: [m]}));
-    const messages$ = xs.merge(actions.messages$, packed$)
+    const packedSent$ = sent$.map(message => list(message));
+    const messages$ = xs.merge(actions.messages$, packedSent$)
         .map(packed => {
             return state => Object.assign({}, state, {list: state.list.concat(packed.list), missing: state.lock === false ? state.missing + packed.list.length : state.missing});
         });
@@ -141,13 +184,15 @@ function model(actions) {
      *
      * @type {*}
      */
-    const state$ = xs.merge(remoteConfig$, messages$, message$, scroll$, currentChannel$, showVideo$)
+    const state$ = xs.merge(remoteConfig$, userReducer$, messages$, message$, scroll$, currentChannel$, showVideo$)
         .fold((state, action) => action(state), DEFAULT_STATE)
         .startWith(DEFAULT_STATE);
 
-    const socketSend$ = xs.combine(sent$, actions.channel$).map(send => (['chat send', send[1], send[0].content]));
+
+    const socketSend$ = xs.combine(sent$, actions.channel$).map(send => (['chat send', send[1], send[0].data.content]));
     const socketChannel$ = actions.channel$.map(channel => (['chat update-me', channel]));
-    const socket$ = xs.merge(socketChannel$, socketSend$);
+    const muteUsers$ = actions.mute$.map(id => (['mute', id]));
+    const socket$ = xs.merge(socketChannel$, socketSend$, muteUsers$);
 
     return {
         state$,
@@ -155,63 +200,140 @@ function model(actions) {
     };
 };
 
+function commandView(type, data, list, index, scrollHook) {
+    switch (type) {
+        case 'MESSAGE':
+            const dataset = {user_id: data.user_id};
+            const simple = index > 0 && list[index - 1].data.user_id === data.user_id;
+            const nrole = ROLES[data.role];
+            const role = new Array(nrole).fill();
+
+            return li('.dt.hover-bg-near-white.w-100.ph3.pv2', scrollHook, [
+                div('.dtc.w2', simple == false ? img({attrs: {src: data.image ? data.image : 'http://via.placeholder.com/40x40'}}) : span('.f7.silver', hour(data.timestamp))),
+                div('.dtc.v-top.pl3', [
+                    simple == false ? span('.f6.f5-ns.fw6.lh-title.black.db.mb1', [
+                        data.username,
+                        role.length > 0 ? span('.f6.blue.ml1', role.map(i => span('.icon-star-filled'))) : span()
+                    ]) : '',
+                    p('.f6.fw4.mt0.mb0.black-60', data.content)
+                ]),
+                div('.dtc.v-mid.actions', [
+                    nrole > 0 && simple == false ? span('.f5.silver.fr.icon-lock.hover-red.pointer.mute', {
+                        dataset,
+                        props: {title: 'Silenciar por 5 minutos'}
+                    }) : span(),
+                    nrole > 1 && simple == false ? span('.f5.silver.fr.icon-block.hover-red.pointer', {
+                        dataset,
+                        props: {title: 'Baneo por 1 día'}
+                    }) : span(),
+                    nrole > 2 ? span('.f5.silver.fr.icon-star.hover-gold.pointer', {
+                        dataset,
+                        props: {title: 'Marcar como mensaje destacado'}
+                    }) : span(),
+                ])
+            ]);
+
+            break;
+        case 'LOG':
+            return li('.dt.hover-bg-near-white.w-100.ph3.pv2', scrollHook, [
+                div('.dtc.w2', span('.f7.silver', hour(data.timestamp))),
+                div('.dtc.v-top.pl3', p('.f6.fw4.mt0.mb0.silver', Loggers[data.action](data.author, data.user))),
+            ]);
+            break;
+    }
+}
+
 function view(state$) {
     return state$.map(state => {
         const channel = state.config.channels[state.channel];
-
-        return div('.mw9.center.sans-serif.cf.flex.flex-column.flex-row-ns', {style: {height: '100%'}}, [
-            div('.fade-in.w-100.pl4-ns.pt4-ns', {class: {dn: channel.youtubePlayer === false}}, [
-                channel.youtubePlayer === false ? null : iframe('.bn.br2', {
-                    props: {
-                        width: '100%',
-                        height: '300',
-                        src: `https://www.youtube.com/embed/${channel.youtubeVideo}`,
-                        frameborder: 0,
-                        allowfullscreen: true
+        const nrole = ROLES[state.user.role];
+        const role = new Array(nrole).fill();
+        const scrollHook = {
+            hook: {
+                insert: vnode => {
+                    if (state.lock) {
+                        vnode.elm.parentElement.parentElement.scrollTop = vnode.elm.parentElement.offsetHeight;
                     }
-                })
-            ]),
-            div('.w-100.flex-auto.flex.pa4-ns', [
-                div('.bg-white.br2.flex-auto.shadow.relative.flex.flex-column', [
-                    nav('.pa3.ma0.bg-light-gray.tc.bb.b--black-05', {style: {flex: '0 1 auto'}}, [
-                        a('.link.black-60.channel.ph2.pointer', {class: {b: state.channel == 'general'}, dataset: {id: 'general'}}, 'General'),
-                        a('.link.black-60.dark.channel.ph2.pointer', {class: {b: state.channel == 'dia-de-hueva'}, dataset: {id: 'dia-de-hueva'}}, 'Día de hueva')
-                    ]),
-                    div('.pv3.h6.overflow-auto.list-container.relative', {style: {flex: '1 1 auto'}}, [
-                        ul('.list.pa0.ma0', state.list.map((item, index, list) => {
-                            const simple = index > 0 && list[index-1].user_id === item.user_id;
+                }
+            }
+        };
 
-                            return li('.dt.hover-bg-near-white.w-100.ph3.pv2', {
-                                hook: {
-                                    insert: vnode => {
-                                        if (state.lock) {
-                                            vnode.elm.parentElement.parentElement.scrollTop = vnode.elm.parentElement.offsetHeight;
-                                        }
-                                    }
+        return main({style: {height: '100%', paddingTop: '62px'}}, [
+            header('.bg-blue.pv2.ph4.absolute.top-0.left-0.w-100', nav('.mw9.center', [
+                div('.dib.v-mid.w-70', [
+                    a('.dib.v-mid', {attrs: {href: 'https://spartangeek.com/'}}, img('.w4', {
+                        attrs: {
+                            src: '/images/logo.svg',
+                            alt: 'SpartanGeek.com'
+                        }
+                    })),
+                    a('.dib.v-mid.white-80.hover-white.pointer.pl4.link', {attrs: {href: 'https://spartangeek.com/'}}, 'Comunidad'),
+                    a('.dib.v-mid.white-80.hover-white.pointer.pl4.link', {attrs: {href: 'https://www.youtube.com/user/SpartanGeekTV'}}, 'Canal de Youtube'),
+                    a('.dib.v-mid.white-80.hover-white.pointer.pl4.link', {attrs: {href: 'https://spartangeek.com/asistente/'}}, 'Pedir PC Spartana'),
+                ]),
+                div('.dib.v-mid.w-30.tr', state.user._id == false ? [
+                    a('.dib.pa2.white-80.ph3', {attrs: {href: 'https://spartangeek.com/'}}, 'Iniciar sesión'),
+                    a('.dib.pa2.white-80.bg-black-80.ph3.br2.ba.b--black-30.ml2', {attrs: {href: 'https://spartangeek.com/'}}, 'Unirme')
+                ] : [
+                    a('.dib.v-mid.white-80.pointer.ph3', state.user.username),
+                    img('.dib.v-mid.br-100', {
+                        attrs: {src: state.user.image || '/images/avatar.svg'},
+                        style: {width: '40px', height: '40px'}
+                    })
+                ])
+            ])),
+            div('.mw9.center.sans-serif.cf.flex.flex-column.flex-row-ns', {style: {height: '100%'}}, [
+                div('.fade-in.w-100.pl4-ns.pt4-ns', {class: {dn: channel.youtubePlayer === false}}, [
+                    channel.youtubePlayer === false ? null : iframe('.bn.br2', {
+                        props: {
+                            width: '100%',
+                            height: '300',
+                            src: `https://www.youtube.com/embed/${channel.youtubeVideo}`,
+                            frameborder: 0,
+                            allowfullscreen: true
+                        }
+                    })
+                ]),
+                div('.w-100.flex-auto.flex.pa4-ns', [
+                    div('.bg-white.br2.flex-auto.shadow.relative.flex.flex-column', [
+                        nav('.pa3.ma0.tc.bb.b--black-05', {style: {flex: '0 1 auto'}}, [
+                            a('.link.black-60.channel.ph2.pointer', {
+                                class: {b: state.channel == 'general'},
+                                dataset: {id: 'general'}
+                            }, 'General'),
+                            a('.link.black-60.dark.channel.ph2.pointer', {
+                                class: {b: state.channel == 'dia-de-hueva'},
+                                dataset: {id: 'dia-de-hueva'}
+                            }, 'Día de hueva')
+                        ]),
+                        div('.pv3.h6.overflow-auto.list-container.relative', {style: {flex: '1 1 auto'}}, [
+                            ul('.list.pa0.ma0', state.list.map((command, index, list) => {
+                                const type = command.type;
+                                const data = command.data;
+
+                                return commandView(type, data, list, index, scrollHook);
+                            })),
+                        ]),
+                        div('.white.bg-blue.absolute.pa2.ph3.br2.f6', {
+                            class: {dn: state.missing === 0},
+                            style: {bottom: '90px', right: '1rem'}
+                        }, [
+                            b(state.missing),
+                            span(' nuevos mensajes')
+                        ]),
+                        div('.pa3.bt.b--light-gray.relative', {style: {flex: '0 1 auto'}}, [
+                            input('.pa2.input-reset.ba.bg-white.b--light-gray.bw1.near-black.w-100.message.br2.outline-0', {
+                                props: {
+                                    autofocus: true,
+                                    type: 'text',
+                                    placeholder: 'Escribe tu mensaje aquí',
+                                    value: state.message,
+                                    disabled: state.user.id == false
                                 }
-                            }, [
-                                div('.dtc.w2', simple == false ? img({attrs: {src: item.image ? item.image : 'http://via.placeholder.com/40x40'}}) : span('.f7.silver', hour(item.timestamp))),
-                                div('.dtc.v-top.pl3', [
-                                    simple == false ? span('.f6.f5-ns.fw6.lh-title.black.db.mb1', item.username) : '',
-                                    p('.f6.fw4.mt0.mb0.black-60', item.content)
-                                ])
-                            ]);
-                        })),
-                    ]),
-                    div('.white.bg-blue.absolute.pa2.ph3.br2.f6', {class: {dn: state.missing === 0}, style: {bottom: '90px', right: '1rem'}}, [
-                        b(state.missing),
-                        span(' nuevos mensajes')
-                    ]),
-                    div('.pa3.bt.b--light-gray', {style: {flex: '0 1 auto'}}, [
-                        input('.pa2.input-reset.ba.bg-white.b--light-gray.bw1.near-black.w-100.message.br2.outline-0', {
-                            props: {
-                                autofocus: true,
-                                type: 'text',
-                                placeholder: 'Escribe tu mensaje aquí',
-                                value: state.message
-                            }
-                        })
-                    ]),
+                            }),
+                            state.user.id == false ? div('.absolute', 'No puedes escribir como invitado.') : null
+                        ]),
+                    ])
                 ])
             ])
         ]);

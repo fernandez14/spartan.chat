@@ -12,18 +12,21 @@
   "dependencies": {
     "@cycle/dom": "^17.4.0",
     "@cycle/run": "^3.1.0",
+    "babel-plugin-transform-object-rest-spread": "^6.23.0",
     "babel-preset-stage-2": "^6.24.1",
     "commander": "^2.11.0",
     "cycle-socket.io": "^4.0.0",
     "cyclic-router": "^4.0.5",
     "express": "^4.15.3",
     "mongoose": "^4.11.1",
+    "mori": "^0.3.2",
     "socket.io": "^2.0.3",
     "socket.io-client": "^2.0.3",
     "socketio-jwt": "^4.5.0",
     "switch-path": "^1.2.0",
     "tachyons": "4.7.0",
-    "xstream": "^10.8.0"
+    "xstream": "^10.8.0",
+    "zmq": "^2.15.3"
   },
   "devDependencies": {
     "auto-reload-brunch": "^2",

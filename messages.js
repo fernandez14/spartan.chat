@@ -11,7 +11,7 @@ exports.userMessage = function (user, message) {
             user_id: user._id,
             username: user.username,
             image: user.image,
-            role: user.role,
+            role: user.role || 'user',
             content: message.trim(),
             timestamp: (new Date()).getTime()
         }

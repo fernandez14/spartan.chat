@@ -266,11 +266,7 @@ function view(state$) {
                         performance: true,
                         html: '#online-users',
                         popperOptions: {
-                            modifiers: {
-                                preventOverflow: {
-                                    enabled: false
-                                }
-                            }
+                            placement: 'bottom'
                         },
                         wait(show, event) {
                             setTimeout(() => {

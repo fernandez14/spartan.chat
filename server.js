@@ -11,7 +11,7 @@ var schemas = require('./schemas');
 var users = require('./users');
 var pull = zmq.socket('pull');
 
-program.version('0.1.1')
+program.version('0.1.2')
     .option('-p, --port <n>', 'Socket.IO port', parseInt, 3100)
     .option('-z, --zmq', 'ZMQ pull server port')
     .option('-db, --mongo <url>', 'MongoDB connection URL.')

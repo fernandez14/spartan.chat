@@ -264,6 +264,7 @@ function view(state$) {
                         arrow: true,
                         performance: true,
                         html: '#online-users',
+                        interactive: true,
                         popperOptions: {
                             placement: 'bottom',
                             modifiers: {
@@ -335,8 +336,8 @@ function view(state$) {
                                 span('.bg-green.br-100.dib.mr2', {style: {width: '10px', height: '10px'}}),
                                 span('.b', String(state.online.length) + ' '),
                                 span('.dn.dib-m.dib-l', `${state.online.length > 1 ? 'conectados' : 'conectado'}`),
-                                div('#online-users.dn', ul('.list.pa0.ma0', state.online.map(u => {
-                                    return li('.ph2', [
+                                div('#online-users.dn', ul('.list.pa0.ma0.tc.overflow-auto', {style: {maxHeight: '300px'}}, state.online.map(u => {
+                                    return li('.ph2.pv1', [
                                         img('.dib.v-mid.br-100', {
                                             attrs: {src: u.image == null || u.image == '' ? 'images/avatar.svg' : u.image},
                                             style: {width: '20px', height: '20px'}

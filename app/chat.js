@@ -166,7 +166,6 @@ function model(actions) {
 
     const onlineUsers$ = actions.online$
         .map(list => {
-            console.log(list);
             return state => ({...state, online: list});
         });
 
@@ -266,7 +265,12 @@ function view(state$) {
                         performance: true,
                         html: '#online-users',
                         popperOptions: {
-                            placement: 'bottom'
+                            placement: 'bottom',
+                            modifiers: {
+                                preventOverflow: {
+                                    boundariesElement: 'viewport'
+                                }
+                            }
                         },
                         wait(show, event) {
                             setTimeout(() => {
@@ -334,7 +338,7 @@ function view(state$) {
                                 div('#online-users.dn', ul('.list.pa0.ma0', state.online.map(u => {
                                     return li('.ph2', [
                                         img('.dib.v-mid.br-100', {
-                                            attrs: {src: u.image == null || u.image == '' ? '/images/avatar.svg' : u.image},
+                                            attrs: {src: u.image == null || u.image == '' ? 'images/avatar.svg' : u.image},
                                             style: {width: '20px', height: '20px'}
                                         }),
                                         span('.ml2', u.username)

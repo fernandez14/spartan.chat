@@ -23,7 +23,7 @@ mongoose.connect(program.mongo, {useMongoClient: true});
 pull.bind('tcp://127.0.0.1:5557');
 
 const config = {
-    serverVersion: program.version,
+    serverVersion: program.version(),
     channels: {
         'general': {
             name: 'General',

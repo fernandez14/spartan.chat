@@ -7,6 +7,7 @@ const ENTER_KEY = 13;
 const ESC_KEY = 27;
 const CONFIG = {
     serverVersion: '0.1.1',
+    newVersion: false,
     channels: {
         'general': {
             name: 'General',
@@ -120,10 +121,12 @@ function intent(dom, socket) {
     const mute$ = dom.select('.mute').events('click')
         .map(e => (e.target.dataset.user_id));
 
+    const fullReload$ = dom.select('.fullReload').events('click').map(e => window.location.reload(true));
+
     const channelMessages$ = channel$.map(name => socket.get('chat ' + name)).flatten();
     const messages$ = xs.merge(channelMessages$, actionsLog$);
 
-    return {config$, actionsLog$, signature$, msg$, scroll$, messages$, channel$, video$, mute$, online$};
+    return {config$, actionsLog$, signature$, msg$, scroll$, messages$, channel$, video$, mute$, online$, fullReload$};
 };
 
 /**
@@ -136,7 +139,7 @@ function model(actions) {
 
     const remoteConfig$ = actions.config$
         .map(config => {
-            return state => Object.assign({}, state, {config});
+            return state => ({...state, config: {...state.config, ...config, newVersion: state.config.serverVersion != config.serverVersion}});
         });
 
     const scroll$ = actions.scroll$
@@ -364,6 +367,11 @@ function view(state$) {
 
                                 return commandView(type, data, list, index, scrollHook, nrole);
                             })),
+                            span('.absolute.bottom-1.w-100.bg-black.white.pv3.tc', {class: {dn: state.config.newVersion !== true}}, [
+                                'Nueva versión disponible, ',
+                                a('.pointer.underline.link.fullReload', 'click aquí'),
+                                ' para cargar actualizaciones.'
+                            ])
                         ]),
                         div('.white.bg-blue.absolute.pa2.ph3.br2.f6', {
                             class: {dn: state.missing === 0},
@@ -404,9 +412,15 @@ export function Chat(sources) {
     const model$ = model(actions$);
     const vtree$ = view(model$.state$);
 
+    actions$.fullReload$.addListener({
+        next() {
+            console.log('Reloading cycle');
+        }
+    })
+
     return {
         DOM: vtree$,
-        socketIO: model$.socket$
+        socketIO: model$.socket$,
     };
 };
 

@@ -55,7 +55,6 @@ export function model(actions) {
         });
 
     const scroll$ = actions.scroll$
-        .map(a => ({lock: a.top == a.height}))
         .startWith({lock: true})
         .map(status => {
             return state => Object.assign({}, state, {

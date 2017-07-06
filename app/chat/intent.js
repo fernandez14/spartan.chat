@@ -40,8 +40,7 @@ export function intent(dom, socket) {
         .compose(debounce(25))
         .map(e => ({
             type: 'feed-scroll',
-            top: e.target.scrollTop,
-            height: e.target.scrollHeight - e.target.offsetHeight
+            lock: e.target.scrollHeight - e.target.scrollTop - e.target.clientHeight < 1
         }));
 
     const channel$ = dom.select('.channel').events('click')

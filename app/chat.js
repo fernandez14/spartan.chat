@@ -6,6 +6,7 @@ import debounce from 'xstream/extra/debounce';
 const ENTER_KEY = 13;
 const ESC_KEY = 27;
 const CONFIG = {
+    serverVersion: '0.1.1',
     channels: {
         'general': {
             name: 'General',

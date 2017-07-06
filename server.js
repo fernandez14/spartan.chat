@@ -11,7 +11,7 @@ var schemas = require('./schemas');
 var users = require('./users');
 var pull = zmq.socket('pull');
 
-program.version('0.1.0')
+program.version('0.1.1')
     .option('-p, --port <n>', 'Socket.IO port', parseInt, 3100)
     .option('-z, --zmq', 'ZMQ pull server port')
     .option('-db, --mongo <url>', 'MongoDB connection URL.')
@@ -23,6 +23,7 @@ mongoose.connect(program.mongo, {useMongoClient: true});
 pull.bind('tcp://127.0.0.1:5557');
 
 const config = {
+    serverVersion: program.version,
     channels: {
         'general': {
             name: 'General',
@@ -46,20 +47,6 @@ const roles = {
     'developer': 4
 };
 
-io.use(jwt.authorize({
-    secret: program.jwt_secret,
-    handshake: true,
-    fail: function (error, data, accept) {
-        console.log('Could not authorize connected client.')
-
-        if (data.request) {
-            accept();
-        } else {
-            accept(null, true);
-        }
-    }
-}));
-
 const zmq$ = xs.createWithMemory({
     eventListener: null,
     start(listener) {
@@ -73,8 +60,6 @@ const zmq$ = xs.createWithMemory({
 });
 
 io.on('connection', function(socket) {
-    const token = socket.decoded_token || {};
-    const user_id = token.user_id || false;
     const global = {
         next(incoming) {
             socket.emit(incoming.event, incoming.message);
@@ -82,21 +67,38 @@ io.on('connection', function(socket) {
     };
 
     zmq$.addListener(global);
+});
 
-    socket.on('disconnect', function() {
-        console.log('user disconnected');
-        zmq$.removeListener(global);
 
-        if (user_id) {
-            users.offline(user_id);
+const chat = io.of('/chat').use(jwt.authorize({
+    secret: program.jwt_secret,
+    handshake: true,
+    fail: function (error, data, accept) {
+        console.log('Could not authorize connected client.');
+
+        if (data.request) {
+            accept();
+        } else {
+            accept(null, true);
         }
-    });
+    }
+}));
+
+chat.on('connection', function(socket) {
+    const token = socket.decoded_token || {};
+    const user_id = token.user_id || false;
 
     socket.on('chat update-me', function(channel) {
         socket.emit('chat '+channel, m.list(...m.lastMessages(channel)));
     });
 
+
     socket.emit('config', config);
+    socket.on('disconnect', function() {
+        if (user_id) {
+            users.offline(user_id);
+        }
+    });
 
     if (user_id) {
         users.one(user_id, user => {

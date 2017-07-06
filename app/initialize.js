@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
         params['query'] = 'token=' + token;
     }
 
-    const socket = io('//spartangeek.com/', params);
+    const socket = io('//spartangeek.com/chat', params);
     socket.on('connect', () => {
         socket.emit('user me');
     });

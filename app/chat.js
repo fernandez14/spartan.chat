@@ -265,6 +265,13 @@ function view(state$) {
                         arrow: true,
                         performance: true,
                         html: '#online-users',
+                        popperOptions: {
+                            modifiers: {
+                                preventOverflow: {
+                                    enabled: false
+                                }
+                            }
+                        },
                         wait(show, event) {
                             setTimeout(() => {
                                 tip.update(popper);
@@ -331,7 +338,7 @@ function view(state$) {
                                 div('#online-users.dn', ul('.list.pa0.ma0', state.online.map(u => {
                                     return li('.ph2', [
                                         img('.dib.v-mid.br-100', {
-                                            attrs: {src: u.image || '/images/avatar.svg'},
+                                            attrs: {src: u.image == null || u.image == '' ? '/images/avatar.svg' : u.image},
                                             style: {width: '20px', height: '20px'}
                                         }),
                                         span('.ml2', u.username)

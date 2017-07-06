@@ -2,10 +2,32 @@ var mori = require('mori');
 var schemas = require('./schemas');
 var featured = mori.queue();
 var users = mori.hashMap();
+var online = mori.sortedSet();
 var banned = mori.hashMap();
 var mute = mori.set();
 var exports = module.exports = {};
 
+
+exports.online = function (id) {
+    const old = online;
+    online = mori.conj(online, id);
+
+    return mori.equals(old, online);
+};
+
+exports.offline = function (id) {
+    const old = online;
+    online = mori.disj(online, id);
+
+    return mori.equals(old, online);
+};
+
+exports.onlineUsers = function () {
+    const map = users;
+    const list = mori.map(id => mori.get(map, id), online);
+
+    return mori.intoArray(list);
+};
 
 exports.one = function (id, callback) {
     id = String(id);

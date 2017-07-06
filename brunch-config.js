@@ -11,7 +11,8 @@ exports.files = {
 
 exports.npm = {
     styles: {
-        tachyons: ['css/tachyons.css']
+        tachyons: ['css/tachyons.css'],
+        'tippy.js': ['dist/tippy.css']
     }
 };
 

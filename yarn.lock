@@ -2554,6 +2554,10 @@ performance-now@^0.2.0:
   version "0.2.0"
   resolved "https://registry.yarnpkg.com/performance-now/-/performance-now-0.2.0.tgz#33ef30c5c77d4ea21c5a53869d91b56d8f2555e5"
 
+popper.js@^1.10.6:
+  version "1.10.8"
+  resolved "https://registry.yarnpkg.com/popper.js/-/popper.js-1.10.8.tgz#0fd6343e68aa8c1cc8cfe35e02c673500a1bc609"
+
 preserve@^0.2.0:
   version "0.2.0"
   resolved "https://registry.yarnpkg.com/preserve/-/preserve-0.2.0.tgz#815ed1f6ebc65926f865b310c0713bcb3315ce4b"
@@ -3106,6 +3110,12 @@ timers-browserify@~1.4.2:
   resolved "https://registry.yarnpkg.com/timers-browserify/-/timers-browserify-1.4.2.tgz#c9c58b575be8407375cb5e2462dacee74359f41d"
   dependencies:
     process "~0.11.0"
+
+tippy.js@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/tippy.js/-/tippy.js-1.0.1.tgz#13d1687a4310423e2d569fefe03e4715baaca9c4"
+  dependencies:
+    popper.js "^1.10.6"
 
 to-array@0.1.4:
   version "0.1.4"

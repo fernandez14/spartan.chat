@@ -25,6 +25,7 @@
     "socketio-jwt": "^4.5.0",
     "switch-path": "^1.2.0",
     "tachyons": "4.7.0",
+    "tippy.js": "^1.0.1",
     "xstream": "^10.8.0",
     "zmq": "^2.15.3"
   },

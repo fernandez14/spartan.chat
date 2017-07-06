@@ -86,6 +86,10 @@ io.on('connection', function(socket) {
     socket.on('disconnect', function() {
         console.log('user disconnected');
         zmq$.removeListener(global);
+
+        if (user_id) {
+            users.offline(user_id);
+        }
     });
 
     socket.on('chat update-me', function(channel) {
@@ -96,17 +100,24 @@ io.on('connection', function(socket) {
 
     if (user_id) {
         users.one(user_id, user => {
+            const changed = users.online(user_id);
             const perms = roles[user.role];
+            const online = users.onlineUsers();
 
             socket.on('user me', function() {
                 socket.emit('user signature', user);
             });
 
+            socket.emit('online-list', online);
+
+            if (changed) {
+                socket.broadcast.emit('online-list', online);
+            }
+
+
             for (var k in roles) {
                 if (roles[k] <= perms) {
                     socket.join('role.'+k);
-
-                    console.log('Joined to: ' +'role.'+k)
                 }
             }
 

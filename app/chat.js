@@ -1,4 +1,5 @@
 import {main, header, div, h1, input, ul, li, img, span, p, a, b, iframe, nav} from '@cycle/dom';
+import tippy from 'tippy.js';
 import xs from 'xstream';
 import debounce from 'xstream/extra/debounce';
 
@@ -30,6 +31,7 @@ const GUEST_USER = {
 const DEFAULT_STATE = {
     config: CONFIG,
     list: [],
+    online: [],
     message: '',
     lock: true,
     channel: 'general',
@@ -84,6 +86,7 @@ function intent(dom, socket) {
      * This allows dynamic config & socket auth.
      */
     const signature$ = socket.get('user signature');
+    const online$ = socket.get('online-list');
     const config$ = socket.get('config');
     const actionsLog$ = socket.get('log');
 
@@ -119,7 +122,7 @@ function intent(dom, socket) {
     const channelMessages$ = channel$.map(name => socket.get('chat ' + name)).flatten();
     const messages$ = xs.merge(channelMessages$, actionsLog$);
 
-    return {config$, actionsLog$, signature$, msg$, scroll$, messages$, channel$, video$, mute$};
+    return {config$, actionsLog$, signature$, msg$, scroll$, messages$, channel$, video$, mute$, online$};
 };
 
 /**
@@ -161,6 +164,12 @@ function model(actions) {
             return state => Object.assign({}, state, {message: message.sent ? '' : message.payload})
         });
 
+    const onlineUsers$ = actions.online$
+        .map(list => {
+            console.log(list);
+            return state => ({...state, online: list});
+        });
+
     /**
      * Transform sent messages to packed list of actual commands.
      *
@@ -184,7 +193,7 @@ function model(actions) {
      *
      * @type {*}
      */
-    const state$ = xs.merge(remoteConfig$, userReducer$, messages$, message$, scroll$, currentChannel$, showVideo$)
+    const state$ = xs.merge(remoteConfig$, userReducer$, messages$, message$, scroll$, currentChannel$, showVideo$, onlineUsers$)
         .fold((state, action) => action(state), DEFAULT_STATE)
         .startWith(DEFAULT_STATE);
 
@@ -247,7 +256,26 @@ function view(state$) {
     return state$.map(state => {
         const channel = state.config.channels[state.channel];
         const nrole = ROLES[state.user.role];
-        const role = new Array(nrole).fill();
+        const onlineTippy = {
+            style: {top: '14px'},
+            hook: {
+                insert(vnode) {
+                    const tip = tippy(vnode.elm, {
+                        position: 'bottom-end',
+                        arrow: true,
+                        performance: true,
+                        html: '#online-users',
+                        wait(show, event) {
+                            setTimeout(() => {
+                                tip.update(popper);
+                                show();
+                            }, 30);
+                        }
+                    });
+                    const popper = tip.getPopperElement(vnode.elm);
+                }
+            }
+        }
 
         return main({style: {height: '100%', paddingTop: '62px'}}, [
             header('.bg-blue.pv2.ph4.absolute.top-0.left-0.w-100', nav('.mw9.center', [
@@ -287,15 +315,29 @@ function view(state$) {
                 ]),
                 div('.w-100.flex-auto.flex.pa4-ns', [
                     div('.bg-white.br2.flex-auto.shadow.relative.flex.flex-column', [
-                        nav('.pa3.ma0.tc.bb.b--black-05', {style: {flex: '0 1 auto'}}, [
-                            a('.link.black-60.channel.ph2.pointer', {
+                        nav('.pa3.ma0.tc.bb.b--black-05.relative', {style: {flex: '0 1 auto'}}, [
+                            a('.dib.v-mid.link.black-60.channel.ph2.pointer', {
                                 class: {b: state.channel == 'general'},
                                 dataset: {id: 'general'}
                             }, 'General'),
-                            a('.link.black-60.dark.channel.ph2.pointer', {
+                            a('.dib.v-mid.link.black-60.dark.channel.ph2.pointer', {
                                 class: {b: state.channel == 'dia-de-hueva'},
                                 dataset: {id: 'dia-de-hueva'}
-                            }, 'Día de hueva')
+                            }, 'Día de hueva'),
+                            a('.dib.v-mid.link.black-60.dark.ph2.pointer.absolute.right-1.ba.b--light-gray.br2.ph2.pv1', onlineTippy, [
+                                span('.bg-green.br-100.dib.mr2', {style: {width: '10px', height: '10px'}}),
+                                span('.b', String(state.online.length) + ' '),
+                                span('.dn.dib-m.dib-l', `${state.online.length > 1 ? 'conectados' : 'conectado'}`),
+                                div('#online-users.dn', ul('.list.pa0.ma0', state.online.map(u => {
+                                    return li('.ph2', [
+                                        img('.dib.v-mid.br-100', {
+                                            attrs: {src: u.image || '/images/avatar.svg'},
+                                            style: {width: '20px', height: '20px'}
+                                        }),
+                                        span('.ml2', u.username)
+                                    ])
+                                })))
+                            ]),
                         ]),
                         div('.pv3.h6.overflow-auto.list-container.relative', {style: {flex: '1 1 auto'}}, [
                             ul('.list.pa0.ma0', state.list.map((command, index, list) => {
@@ -342,7 +384,8 @@ function view(state$) {
                         ]),
                     ])
                 ])
-            ])
+            ]),
+
         ]);
     });
 }

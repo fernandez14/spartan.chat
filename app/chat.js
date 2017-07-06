@@ -200,7 +200,7 @@ function model(actions) {
     };
 };
 
-function commandView(type, data, list, index, scrollHook) {
+function commandView(type, data, list, index, scrollHook, rolePower) {
     switch (type) {
         case 'MESSAGE':
             const dataset = {user_id: data.user_id};
@@ -218,15 +218,15 @@ function commandView(type, data, list, index, scrollHook) {
                     p('.f6.fw4.mt0.mb0.black-60', data.content)
                 ]),
                 div('.dtc.v-mid.actions', [
-                    nrole > 0 && simple == false ? span('.f5.silver.fr.icon-lock.hover-red.pointer.mute', {
+                    rolePower > 0 && simple == false ? span('.f5.silver.fr.icon-lock.hover-red.pointer.mute', {
                         dataset,
                         props: {title: 'Silenciar por 5 minutos'}
                     }) : span(),
-                    nrole > 1 && simple == false ? span('.f5.silver.fr.icon-block.hover-red.pointer', {
+                    rolePower > 1 && simple == false ? span('.f5.silver.fr.icon-block.hover-red.pointer', {
                         dataset,
                         props: {title: 'Baneo por 1 día'}
                     }) : span(),
-                    nrole > 2 ? span('.f5.silver.fr.icon-star.hover-gold.pointer', {
+                    rolePower > 2 ? span('.f5.silver.fr.icon-star.hover-gold.pointer', {
                         dataset,
                         props: {title: 'Marcar como mensaje destacado'}
                     }) : span(),
@@ -311,7 +311,7 @@ function view(state$) {
                                     }
                                 };
 
-                                return commandView(type, data, list, index, scrollHook);
+                                return commandView(type, data, list, index, scrollHook, nrole);
                             })),
                         ]),
                         div('.white.bg-blue.absolute.pa2.ph3.br2.f6', {

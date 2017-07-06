@@ -10,6 +10,15 @@ const ROLES = {
     'developer': 4
 };
 
+const ROLE_LABELS = {
+    'guest': 'Invitado',
+    'user': 'Usuario',
+    'category-moderator': 'Moderador',
+    'super-moderator': 'Super Moderador',
+    'administrator': 'Admin',
+    'developer': 'Dev'
+}
+
 const Loggers = {
     muted: (author, user) => {
         return `${author.username} ha silenciado a ${user.username} por 5 minutos.`;
@@ -88,7 +97,7 @@ export function view(state$) {
                 ]),
                 div('.w-100.flex-auto.flex.pa4-ns', [
                     div('.bg-white.br2.flex-auto.shadow.relative.flex.flex-column', [
-                        nav('.pa3.ma0.tc.bb.b--black-05.relative', {style: {flex: '0 1 auto'}}, [
+                        nav('.pa3.ma0.tc.bb.b--black-05.relative', {class: {tc: !channel.youtubePlayer, tl: channel.youtubePlayer}, style: {flex: '0 1 auto'}}, [
                             a('.dib.v-mid.link.black-60.channel.ph2.pointer', {
                                 class: {b: state.channel == 'general'},
                                 dataset: {id: 'general'}
@@ -127,12 +136,7 @@ export function view(state$) {
                                 };
 
                                 return commandView(type, data, list, index, scrollHook, nrole);
-                            })),
-                            span('.absolute.bottom-1.w-100.bg-black.white.pv3.tc', {class: {dn: state.config.newVersion !== true}}, [
-                                'Nueva versión disponible, ',
-                                a('.pointer.underline.link.fullReload', 'click aquí'),
-                                ' para cargar actualizaciones.'
-                            ])
+                            }))
                         ]),
                         div('.white.bg-blue.absolute.pa2.ph3.br2.f6', {
                             class: {dn: state.missing === 0},
@@ -160,6 +164,11 @@ export function view(state$) {
                                 ])
                             ]) : null
                         ]),
+                        div('.br2.br--bottom.w-100.bg-black.white.pv3.tc', {class: {dn: state.config.newVersion !== true}}, [
+                            'Nueva versión disponible, ',
+                            a('.pointer.underline.link.fullReload', 'click aquí'),
+                            ' para cargar actualizaciones.'
+                        ]),
                     ])
                 ])
             ]),
@@ -177,24 +186,25 @@ function commandView(type, data, list, index, scrollHook, rolePower) {
             const role = new Array(nrole).fill();
 
             return li('.dt.hover-bg-near-white.w-100.ph3.pv2', scrollHook, [
-                div('.dtc.w2', simple == false ? img({attrs: {src: data.image ? data.image : 'http://via.placeholder.com/40x40'}}) : span('.f7.silver', hour(data.timestamp))),
+                div('.dtc.v-top.w2', simple == false ? img('.br-100', {attrs: {src: data.image ? data.image : 'images/avatar.svg'}}) : span('.ml1.f7.fw5.light-silver', hour(data.timestamp))),
                 div('.dtc.v-top.pl3', [
                     simple == false ? span('.f6.f5-ns.fw6.lh-title.black.db.mb1', [
                         data.username,
-                        role.length > 0 ? span('.f6.blue.ml1', role.map(i => span('.icon-star-filled'))) : span()
-                    ]) : '',
+                        role.length > 0 ? span('.f6.blue.ml1', role.map(i => span('.icon-star-filled'))) : span(),
+                        span('.ml1.f6.fw5.silver', hour(data.timestamp))
+                    ]) : span(),
                     p('.f6.fw4.mt0.mb0.black-60', data.content)
                 ]),
                 div('.dtc.v-mid.actions', [
-                    rolePower > 0 && simple == false ? span('.f5.silver.fr.icon-lock.hover-red.pointer.mute', {
+                    rolePower > 0 && simple == false ? span('.f6.silver.fr.icon-lock.hover-red.pointer.mute', {
                         dataset,
                         props: {title: 'Silenciar por 5 minutos'}
                     }) : span(),
-                    rolePower > 1 && simple == false ? span('.f5.silver.fr.icon-block.hover-red.pointer', {
+                    rolePower > 1 && simple == false ? span('.f6.silver.fr.icon-block.hover-red.pointer', {
                         dataset,
                         props: {title: 'Baneo por 1 día'}
                     }) : span(),
-                    rolePower > 2 ? span('.f5.silver.fr.icon-star.hover-gold.pointer', {
+                    rolePower > 2 ? span('.f6.silver.fr.icon-star.hover-gold.pointer', {
                         dataset,
                         props: {title: 'Marcar como mensaje destacado'}
                     }) : span(),

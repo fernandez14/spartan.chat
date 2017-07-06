@@ -8,10 +8,11 @@ var zmq = require('zmq');
 var xs = require('xstream').default;
 var m = require('./messages');
 var schemas = require('./schemas');
+var security = require('./security');
 var users = require('./users');
 var pull = zmq.socket('pull');
 
-program.version('0.1.2')
+program.version('0.1.3')
     .option('-p, --port <n>', 'Socket.IO port', parseInt, 3100)
     .option('-z, --zmq', 'ZMQ pull server port')
     .option('-db, --mongo <url>', 'MongoDB connection URL.')
@@ -127,7 +128,7 @@ chat.on('connection', function(socket) {
                 message = String(message)
                 channel = String(channel)
 
-                if (users.isBlocked(user._id)) {
+                if (true === users.isBlocked(user._id) || false === security.viableMessage(user, channel, message)) {
                     return;
                 }
 
@@ -148,7 +149,7 @@ chat.on('connection', function(socket) {
                         if (roles[targetUser.role] <= rolePower) {
                             const message = m.list({type: 'LOG', data: {action: 'muted', author: user, user: targetUser, timestamp: (new Date()).getTime()}});
 
-                            socket.to('role.developer').emit('log', message);
+                            socket.to('role.developer').to('role.administrator').to('role.super-moderator').to('role.child-moderator').emit('log', message);
                             socket.emit('log', message);
                             users.onMuteUser(id);
                         }

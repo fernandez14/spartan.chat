@@ -38,7 +38,7 @@ exports.one = function (id, callback) {
 
     schemas.User.findById(id, 'username image roles', (err, user) => {
         const signature = {
-            _id: user._id,
+            _id: String(user._id),
             image: user.image,
             role: user.role,
             username: user.username
@@ -71,7 +71,6 @@ exports.onRemoveMuteUser = function (id) {
 
 exports.onBanUser = function (id) {
     banned = mori.conj(banned, id);
-    console.log('ban ' + id);
 
     setTimeout(exports.onRemoveMuteUser.bind(this, id), 60 * 5 * 1000);
 };

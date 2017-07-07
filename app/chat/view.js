@@ -13,7 +13,8 @@ var md = markdown({
 md.use(emoji);
 md.use(mila, {
     target: '_blank',
-    rel: 'noopener'
+    rel: 'noopener',
+    class: 'link blue hover-green'
 });
 
 const ROLES = {
@@ -208,7 +209,7 @@ function commandView(type, data, list, index, scrollHook, rolePower) {
                         role.length > 0 ? span('.f6.blue.ml1', role.map(i => span('.icon-star-filled'))) : span(),
                         span('.ml1.f6.fw5.silver', hour(data.timestamp))
                     ]) : span(),
-                    p('.f6.fw4.mt0.mb0.black-60', virtualize(`<span>${md.renderInline(data.content)}</span>`))
+                    p('.f6.fw4.mt0.mb0.mid-gray', virtualize(`<span>${md.renderInline(data.content)}</span>`))
                 ]),
                 div('.dtc.v-mid.actions', [
                     rolePower > 0 && simple == false ? span('.f6.silver.fr.icon-lock.hover-red.pointer.mute', {

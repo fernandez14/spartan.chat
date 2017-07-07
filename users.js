@@ -47,11 +47,12 @@ exports.one = function (id, callback) {
     }
 
     schemas.User.findById(id, 'username image roles', (err, user) => {
+        const usr = user.toObject({ virtuals: true });
         const signature = {
-            _id: String(user._id),
-            image: user.image,
-            role: user.role,
-            username: user.username
+            _id: String(usr._id),
+            image: usr.image,
+            role: usr.role,
+            username: usr.username
         };
 
         users = mori.assoc(users, id, signature);

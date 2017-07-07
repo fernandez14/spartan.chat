@@ -9,9 +9,10 @@ const userSchema = new Schema({
 });
 
 userSchema.virtual('role').get(function () {
-    for (var i in this.roles) {
-        if (this.roles[i].name !== 'user') {
-            return this.roles[i].name;
+    const roles = this.roles;
+    for (let i = 0; i < roles.length; i++) {
+        if ('name' in roles[i] && roles[i].name !== 'user') {
+            return String(roles[i].name);
         }
     }
 

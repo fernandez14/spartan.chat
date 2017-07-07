@@ -48,30 +48,7 @@ const roles = {
     'developer': 4
 };
 
-const zmq$ = xs.createWithMemory({
-    eventListener: null,
-    start(listener) {
-        this.eventListener = pull.on('message', args => {
-            return listener.next(JSON.parse(args.toString()));
-        });
-    },
-    stop() {
-        this.eventListener = null;
-    }
-});
-
-io.on('connection', function(socket) {
-    const global = {
-        next(incoming) {
-            socket.emit(incoming.event, incoming.message);
-        }
-    };
-
-    zmq$.addListener(global);
-});
-
-
-const chat = io.of('/chat').use(jwt.authorize({
+const jwtMiddleware = jwt.authorize({
     secret: program.jwt_secret,
     handshake: true,
     fail: function (error, data, accept) {
@@ -83,7 +60,33 @@ const chat = io.of('/chat').use(jwt.authorize({
             accept(null, true);
         }
     }
-}));
+});
+
+const zmq$ = xs.create({
+    eventListener: null,
+    start(listener) {
+        this.eventListener = pull.on('message', args => {
+            return listener.next(JSON.parse(args.toString()));
+        });
+    },
+    stop() {
+        this.eventListener = null;
+    }
+});
+
+io.use(jwtMiddleware);
+io.on('connection', function(socket) {
+    const global = {
+        next(incoming) {
+            socket.emit(incoming.event, incoming.message);
+        }
+    };
+
+    zmq$.addListener(global);
+    console.log('connected client ', socket.id)
+});
+
+const chat = io.of('/chat').use(jwtMiddleware);
 
 chat.on('connection', function(socket) {
     const token = socket.decoded_token || {};

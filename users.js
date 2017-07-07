@@ -2,6 +2,7 @@ var mori = require('mori');
 var schemas = require('./schemas');
 var featured = mori.queue();
 var users = mori.hashMap();
+var usersChannel = mori.hashMap();
 var online = mori.sortedSet();
 var banned = mori.hashMap();
 var mute = mori.set();
@@ -21,6 +22,15 @@ exports.offline = function (id) {
 
     return mori.equals(old, online);
 };
+
+exports.channel = function(id, channel = false) {
+    if (channel === false) {
+        return mori.get(usersChannel, id, 'general');
+    }
+
+    usersChannel = mori.assoc(usersChannel, id, channel);
+    return true;
+}
 
 exports.onlineUsers = function () {
     const map = users;

@@ -1,7 +1,7 @@
 var exports = module.exports = {};
 
-exports.list = function (...messages) {
-    return {list: messages};
+exports.list = function (channel, ...messages) {
+    return {list: messages, channel};
 };
 
 exports.userMessage = function (user, message) {

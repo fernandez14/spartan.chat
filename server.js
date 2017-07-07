@@ -88,11 +88,20 @@ const chat = io.of('/chat').use(jwt.authorize({
 chat.on('connection', function(socket) {
     const token = socket.decoded_token || {};
     const user_id = token.user_id || false;
+    const id = socket.id;
 
     socket.on('chat update-me', function(channel) {
-        socket.emit('chat '+channel, m.list(...m.lastMessages(channel)));
-    });
+        channel = String(channel);
 
+        if (channel in config.channels) {
+            const list = m.list(channel, ...m.lastMessages(channel));
+
+            socket.emit('chat '+channel, list);
+            socket.emit('messages', list);
+            socket.join('room:' + channel);
+            users.channel(id, channel);
+        }
+    });
 
     socket.emit('config', config);
     socket.on('disconnect', function() {
@@ -103,7 +112,8 @@ chat.on('connection', function(socket) {
 
     if (user_id) {
         users.one(user_id, user => {
-            const changed = users.online(user_id);
+            users.online(user_id);
+
             const perms = roles[user.role];
             const online = users.onlineUsers();
 
@@ -111,11 +121,23 @@ chat.on('connection', function(socket) {
                 socket.emit('user signature', user);
             });
 
-            socket.emit('online-list', online);
+            socket.on('send', function(message) {
+                const channel = users.channel(id);
 
-            if (changed) {
-                socket.broadcast.emit('online-list', online);
-            }
+                // Block message if needed.
+                if (true === users.isBlocked(user_id) || false === security.viableMessage(user, channel, message)) {
+                    return;
+                }
+
+                const msg = m.userMessage(user, message);
+                socket.to(`room:${channel}`).emit('messages', m.list(channel, msg));
+
+                // Finally push to the history.
+                m.pushHistory(channel, msg);
+            });
+
+            socket.emit('online-list', online);
+            socket.broadcast.emit('online-list', online);
 
 
             for (var k in roles) {
@@ -137,9 +159,13 @@ chat.on('connection', function(socket) {
                 }
 
                 const msg = m.userMessage(user, message);
-                m.pushHistory(channel, msg);
+                const list = m.list(channel, msg);
 
-                socket.broadcast.emit('chat ' + channel, m.list(msg));
+                socket.broadcast.emit('chat ' + channel, list);
+                socket.to(`room:${channel}`).emit('messages', list);
+
+                // Finally push to the history.
+                m.pushHistory(channel, msg);
             });
 
             const rolePower = roles[user.role];
@@ -150,6 +176,7 @@ chat.on('connection', function(socket) {
                             const message = m.list({type: 'LOG', data: {action: 'muted', author: user, user: targetUser, timestamp: (new Date()).getTime()}});
 
                             socket.to('role.developer').to('role.administrator').to('role.super-moderator').to('role.child-moderator').emit('log', message);
+                            socket.in('role.developer').in('role.administrator').in('role.super-moderator').in('role.child-moderator').emit('messages', message);
                             socket.emit('log', message);
                             users.onMuteUser(id);
                         }

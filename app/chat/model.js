@@ -1,7 +1,7 @@
 import xs from 'xstream';
 
 const CONFIG = {
-    serverVersion: '0.1.3',
+    serverVersion: '0.1.4',
     newVersion: false,
     defaultChannel: 'general',
     channels: {

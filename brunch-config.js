@@ -17,7 +17,12 @@ exports.npm = {
 };
 
 exports.plugins = {
-    babel: {presets: ['latest', 'stage-2'], plugins: ['transform-object-rest-spread']}
+    babel: {presets: ['latest', 'stage-2'], plugins: ['transform-object-rest-spread']},
+    timestampbrunch: {
+        "environments": ["dev", "production"],
+        "referenceFiles": "index.html",
+        "suffix": "min"
+    }
 };
 
 

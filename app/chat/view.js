@@ -64,7 +64,7 @@ export function view(state$) {
                 div('.dib.v-mid.w-70', [
                     a('.dib.v-mid', {attrs: {href: 'https://spartangeek.com/'}}, img('.w4', {
                         attrs: {
-                            src: '/images/logo.svg',
+                            src: 'images/logo.svg',
                             alt: 'SpartanGeek.com'
                         }
                     })),

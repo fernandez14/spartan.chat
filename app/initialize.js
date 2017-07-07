@@ -1,6 +1,7 @@
 import io from 'socket.io-client';
 import {run} from '@cycle/run';
 import {makeDOMDriver} from '@cycle/dom';
+import {makeHistoryDriver} from '@cycle/history';
 import {makeSocketIODriver} from './socket';
 import {Chat} from './chat';
 
@@ -21,7 +22,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const drivers = {
         DOM: makeDOMDriver('#app'),
-        socketIO: makeSocketIODriver(socket)
+        socketIO: makeSocketIODriver(socket),
+        history: makeHistoryDriver({
+            basename: '/chat'
+        })
     };
 
     run(Chat, drivers);

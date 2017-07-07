@@ -8,9 +8,9 @@ const ESC_KEY = 27;
  *
  * @param dom
  * @param socket
- * @returns {{config$, actionsLog$, signature$, msg$, scroll$: (Stream|Stream<{type: string, top: (number|*), height: number}>), messages$: (Stream|*), channel$: (MemoryStream|MemoryStream<string>|*), video$: (MemoryStream|MemoryStream<boolean>), mute$, online$, fullReload$}}
+ * @param history
  */
-export function intent(dom, socket) {
+export function intent(dom, socket, history$) {
 
     /**
      * Some initial data will come right outta socket.io.
@@ -20,7 +20,8 @@ export function intent(dom, socket) {
     const signature$ = socket.get('user signature');
     const online$ = socket.get('online-list');
     const config$ = socket.get('config');
-    const actionsLog$ = socket.get('log');
+    const messages$ = socket.get('messages');
+    const pathname$ = history$.map(location => location.pathname.substr(1));
 
     /**
      * DOM intents including:
@@ -44,20 +45,12 @@ export function intent(dom, socket) {
         }));
 
     const channel$ = dom.select('.channel').events('click')
-        .map(e => (e.target.dataset.id))
-        .startWith('general');
-
-    const video$ = channel$
-        .map(channel => channel == 'dia-de-hueva')
-        .startWith(false);
+        .map(e => (e.target.dataset.id));
 
     const mute$ = dom.select('.mute').events('click')
         .map(e => (e.target.dataset.user_id));
 
     const fullReload$ = dom.select('.fullReload').events('click').map(e => window.location.reload(true));
 
-    const channelMessages$ = channel$.map(name => socket.get('chat ' + name)).flatten();
-    const messages$ = xs.merge(channelMessages$, actionsLog$);
-
-    return {config$, actionsLog$, signature$, msg$, scroll$, messages$, channel$, video$, mute$, online$, fullReload$};
+    return {config$, signature$, msg$, scroll$, messages$, channel$, mute$, online$, fullReload$, pathname$};
 }

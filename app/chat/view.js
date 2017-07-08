@@ -103,7 +103,7 @@ export function view(state$) {
                 ])
             ])),
             div('.mw9.center.sans-serif.cf.flex.flex-column.flex-row-ns', {style: {height: '100%'}}, [
-                div('.fade-in.w-100.pl4-ns.pt4-ns.pb4', {class: {dn: channel.youtubePlayer === false, flex: channel.youtubePlayer !== false, flexColumn: channel.youtubePlayer !== false}}, [
+                div('.fade-in.w-100.pl4-ns.pt4-ns.pb4', {class: {dn: channel.youtubePlayer === false, flex: channel.youtubePlayer !== false, 'flex-column': channel.youtubePlayer !== false}}, [
                     channel.youtubePlayer === false ? div() : iframe('.bn.br2.flex-auto', {
                         style: {
                             maxHeight: '450px'

@@ -125,7 +125,7 @@ export function view(state$) {
                                 }),
                                 div('.dib.v-mid.w-80.pl3', [
                                     span('.b', state.highlighted.username),
-                                    p('.ma0.mt2', state.highlighted.content)
+                                    p('.ma0.mt2', virtualize(`<span>${md.renderInline(state.highlighted.content)}</span>`))
                                 ])
                             ])
                         ])

@@ -97,7 +97,7 @@ export function view(state$) {
                 ] : [
                     a('.dib.v-mid.white-80.pointer.ph3', state.user.username),
                     img('.dib.v-mid.br-100', {
-                        attrs: {src: state.user.image || '/images/avatar.svg'},
+                        attrs: {src: state.user.image || 'images/avatar.svg'},
                         style: {width: '40px', height: '40px'}
                     })
                 ])

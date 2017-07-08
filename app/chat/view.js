@@ -112,7 +112,9 @@ export function view(state$) {
                             width: '100%',
                             src: `https://www.youtube.com/embed/${channel.youtubeVideo}`,
                             frameborder: 0,
-                            allowfullscreen: true
+                        },
+                        attrs: {
+                            allowfullscreen: 'true'
                         }
                     }),
                     state.highlighted == false ? div() : div('.flex.w-100.pt4', [
@@ -121,7 +123,7 @@ export function view(state$) {
                             div('.pa2.ph4.pb3', [
                                 img('.dib.v-mid.br-100', {
                                     attrs: {src: state.highlighted.image == null || state.highlighted.image == '' ? 'images/avatar.svg' : state.highlighted.image},
-                                    style: {width: '2.5rem', height: '2.5rem'}
+                                     style: {width: '2.5rem', height: '2.5rem'}
                                 }),
                                 div('.dib.v-mid.w-80.pl3', [
                                     span('.b', state.highlighted.username),

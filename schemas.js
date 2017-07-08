@@ -20,3 +20,15 @@ userSchema.virtual('role').get(function () {
 });
 
 exports.User = mongoose.model('User', userSchema);
+
+const messageSchema = new Schema({
+    user_id: Schema.Types.ObjectId,
+    channel: String,
+    content: String,
+    username: String,
+    image: String,
+    role: String,
+    timestamp: Number,
+});
+
+exports.Message = mongoose.model('ChatLog', messageSchema);

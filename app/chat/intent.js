@@ -21,6 +21,7 @@ export function intent(dom, socket, history$) {
     const online$ = socket.get('online-list');
     const config$ = socket.get('config');
     const messages$ = socket.get('messages');
+    const highlighted$ = socket.get('highlighted');
     const pathname$ = history$.map(location => location.pathname.substr(1));
 
     /**
@@ -47,10 +48,19 @@ export function intent(dom, socket, history$) {
     const channel$ = dom.select('.channel').events('click')
         .map(e => (e.target.dataset.id));
 
-    const mute$ = dom.select('.mute').events('click')
-        .map(e => (e.target.dataset.user_id));
+    const idActions$ = dom.select('.id-action').events('click')
+        .map(e => ({type: e.target.dataset.type, id: e.target.dataset.id}));
 
     const fullReload$ = dom.select('.fullReload').events('click').map(e => window.location.reload(true));
 
-    return {config$, signature$, msg$, scroll$, messages$, channel$, mute$, online$, fullReload$, pathname$};
+    /**
+     * Highlighted messages require a special stream of streams to be generated
+     */
+    const rhighlighted$ = highlighted$.map(list =>
+        list.length > 0 ?
+            xs.periodic(12000).filter(x => x > 0).startWith(0).map(x => x % list.length).map(x => list[x]) :
+            xs.empty()
+    ).flatten();
+
+    return {config$, signature$, msg$, scroll$, messages$, highlighted$, rhighlighted$, channel$, idActions$, online$, fullReload$, pathname$};
 }

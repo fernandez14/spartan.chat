@@ -12,7 +12,7 @@ var security = require('./security');
 var users = require('./users');
 var pull = zmq.socket('pull');
 
-program.version('0.1.4')
+program.version('0.1.5')
     .option('-p, --port <n>', 'Socket.IO port', parseInt, 3100)
     .option('-z, --zmq', 'ZMQ pull server port')
     .option('-db, --mongo <url>', 'MongoDB connection URL.')
@@ -34,7 +34,7 @@ const config = {
         'dia-de-hueva': {
             name: 'Día de hueva',
             youtubePlayer: true,
-            youtubeVideo: 'iyWHsWWVSMY'
+            youtubeVideo: 'VEkHoXbNPMU'
         }
     }
 };
@@ -113,6 +113,11 @@ chat.on('connection', function(socket) {
         }
     });
 
+    const tempFeatured = m.highlighted();
+    if (tempFeatured.length > 0) {
+        socket.emit('highlighted', tempFeatured);
+    }
+
     if (user_id) {
         users.one(user_id, user => {
             users.online(user_id);
@@ -133,15 +138,16 @@ chat.on('connection', function(socket) {
                 }
 
                 const msg = m.userMessage(user, message);
+
                 socket.to(`room:${channel}`).emit('messages', m.list(channel, msg));
 
                 // Finally push to the history.
                 m.pushHistory(channel, msg);
+                m.saveMessage(channel, msg);
             });
 
             socket.emit('online-list', online);
             socket.broadcast.emit('online-list', online);
-
 
             for (var k in roles) {
                 if (roles[k] <= perms) {
@@ -173,17 +179,43 @@ chat.on('connection', function(socket) {
 
             const rolePower = roles[user.role];
             if (rolePower > 0) {
-                socket.on('mute', function(id) {
-                    users.one(id, function(targetUser) {
+                socket.on('mute', function(targetId) {
+                    users.one(targetId, function(targetUser) {
                         if (roles[targetUser.role] <= rolePower) {
-                            const message = m.list({type: 'LOG', data: {action: 'muted', author: user, user: targetUser, timestamp: (new Date()).getTime()}});
+                            const message = m.list('log', {type: 'LOG', data: {action: 'muted', author: user, user: targetUser, timestamp: (new Date()).getTime()}});
 
                             socket.to('role.developer').to('role.administrator').to('role.super-moderator').to('role.child-moderator').emit('log', message);
-                            socket.in('role.developer').in('role.administrator').in('role.super-moderator').in('role.child-moderator').emit('messages', message);
+                            socket.to('role.developer').to('role.administrator').to('role.super-moderator').to('role.child-moderator').emit('messages', message);
                             socket.emit('log', message);
-                            users.onMuteUser(id);
+                            socket.emit('messages', message);
+                            users.onMuteUser(targetId);
                         }
                     })
+                });
+            }
+
+            if (rolePower >= 2) {
+                socket.on('ban', function(targetId) {
+                    users.one(targetId, function(targetUser) {
+                        if (roles[targetUser.role] <= rolePower) {
+                            const message = m.list('log', {type: 'LOG', data: {action: 'banned', author: user, user: targetUser, timestamp: (new Date()).getTime()}});
+
+                            socket.to('role.developer').to('role.administrator').to('role.super-moderator').to('role.child-moderator').emit('log', message);
+                            socket.to('role.developer').to('role.administrator').to('role.super-moderator').to('role.child-moderator').emit('messages', message);
+                            socket.emit('log', message);
+                            socket.emit('messages', message);
+                            users.onBanUser(targetId);
+                        }
+                    })
+                });
+
+                socket.on('highlight', function(messageId) {
+                    m.highlight(messageId, function(featured) {
+                        chat.emit('highlighted', featured);
+                        setTimeout(() => {
+                            chat.emit('highlighted', m.popHighlight());
+                        }, 2 * 60 * 1000);
+                    });
                 });
             }
         });

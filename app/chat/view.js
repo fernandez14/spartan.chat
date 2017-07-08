@@ -1,4 +1,4 @@
-import {main, header, div, h1, input, ul, li, img, span, p, a, b, iframe, nav} from '@cycle/dom';
+import {main, header, div, h1, h4, input, ul, li, img, span, p, a, b, iframe, nav} from '@cycle/dom';
 import tippy from 'tippy.js';
 import markdown from 'markdown-it';
 import emoji from 'markdown-it-emoji';
@@ -38,6 +38,9 @@ const ROLE_LABELS = {
 const Loggers = {
     muted: (author, user) => {
         return `${author.username} ha silenciado a ${user.username} por 5 minutos.`;
+    },
+    banned: (author, user) => {
+        return `${author.username} ha baneado a ${user.username} por 1 día.`;
     }
 };
 
@@ -101,7 +104,7 @@ export function view(state$) {
             ])),
             div('.mw9.center.sans-serif.cf.flex.flex-column.flex-row-ns', {style: {height: '100%'}}, [
                 div('.fade-in.w-100.pl4-ns.pt4-ns', {class: {dn: channel.youtubePlayer === false}}, [
-                    channel.youtubePlayer === false ? null : iframe('.bn.br2', {
+                    channel.youtubePlayer === false ? div() : iframe('.bn.br2', {
                         props: {
                             width: '100%',
                             height: '300',
@@ -109,7 +112,22 @@ export function view(state$) {
                             frameborder: 0,
                             allowfullscreen: true
                         }
-                    })
+                    }),
+                    state.highlighted == false ? div() : div('.flex.w-100.pt4', [
+                        div('.bg-white.flex-auto.shadow.br2', [
+                            h4('.ph4.pt3.ma0.silver.fw4', 'Comentarios destacados'),
+                            div('.pa2.ph4.pb3', [
+                                img('.dib.v-mid.br-100', {
+                                    attrs: {src: state.highlighted.image == null || state.highlighted.image == '' ? 'images/avatar.svg' : state.highlighted.image},
+                                    style: {width: '2.5rem', height: '2.5rem'}
+                                }),
+                                div('.dib.v-mid.w-80.pl3', [
+                                    span('.b', state.highlighted.username),
+                                    p('.ma0.mt2', state.highlighted.content)
+                                ])
+                            ])
+                        ])
+                    ])
                 ]),
                 div('.w-100.flex-auto.flex.pa4-ns', [
                     div('.bg-white.br2.flex-auto.shadow.relative.flex.flex-column', [
@@ -196,13 +214,12 @@ export function view(state$) {
 function commandView(type, data, list, index, scrollHook, rolePower) {
     switch (type) {
         case 'MESSAGE':
-            const dataset = {user_id: data.user_id};
             const simple = index > 0 && list[index - 1].data.user_id === data.user_id;
             const nrole = ROLES[data.role];
             const role = new Array(nrole).fill();
 
             return li('.dt.hover-bg-near-white.w-100.ph3.pv2', scrollHook, [
-                div('.dtc.v-top.w2', simple == false ? img('.br-100', {attrs: {src: data.image ? data.image : 'images/avatar.svg'}}) : span('.ml1.f7.fw5.light-silver', hour(data.timestamp))),
+                div('.dtc.v-top.tc', {style: {width: '3rem'}}, simple == false ? img('.br-100', {attrs: {src: data.image ? data.image : 'images/avatar.svg'}}) : span('.f7.light-silver', hour(data.timestamp))),
                 div('.dtc.v-top.pl3', [
                     simple == false ? span('.f6.f5-ns.fw6.lh-title.black.db.mb1', [
                         data.username,
@@ -212,16 +229,16 @@ function commandView(type, data, list, index, scrollHook, rolePower) {
                     p('.f6.fw4.mt0.mb0.mid-gray', virtualize(`<span>${md.renderInline(data.content)}</span>`))
                 ]),
                 div('.dtc.v-mid.actions', [
-                    rolePower > 0 && simple == false ? span('.f6.silver.fr.icon-lock.hover-red.pointer.mute', {
-                        dataset,
+                    rolePower > 0 && simple == false ? span('.f6.silver.fr.icon-lock.hover-red.pointer.id-action', {
+                        dataset: {id: data.user_id, type: 'mute'},
                         props: {title: 'Silenciar por 5 minutos'}
                     }) : span(),
-                    rolePower > 1 && simple == false ? span('.f6.silver.fr.icon-block.hover-red.pointer', {
-                        dataset,
+                    rolePower > 1 && simple == false ? span('.f6.silver.fr.icon-block.hover-red.pointer.id-action', {
+                        dataset: {id: data.user_id, type: 'ban'},
                         props: {title: 'Baneo por 1 día'}
                     }) : span(),
-                    rolePower > 2 ? span('.f6.silver.fr.icon-star.hover-gold.pointer', {
-                        dataset,
+                    rolePower > 2 && '_id' in data ? span('.f6.silver.fr.icon-star.hover-gold.pointer.id-action', {
+                        dataset: {id: data._id, type: 'highlight'},
                         props: {title: 'Marcar como mensaje destacado'}
                     }) : span(),
                 ])
@@ -230,8 +247,8 @@ function commandView(type, data, list, index, scrollHook, rolePower) {
             break;
         case 'LOG':
             return li('.dt.hover-bg-near-white.w-100.ph3.pv2', scrollHook, [
-                div('.dtc.w2', span('.f7.silver', hour(data.timestamp))),
-                div('.dtc.v-top.pl3', p('.f6.fw4.mt0.mb0.silver', Loggers[data.action](data.author, data.user))),
+                div('.dtc.tc', {style: {width: '3rem'}}, span('.f7.blue', hour(data.timestamp))),
+                div('.dtc.v-mid.pl3', p('.f6.fw4.mt0.mb0.near-black', Loggers[data.action](data.author, data.user))),
             ]);
             break;
     }

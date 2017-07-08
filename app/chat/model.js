@@ -1,7 +1,7 @@
 import xs from 'xstream';
 
 const CONFIG = {
-    serverVersion: '0.1.4',
+    serverVersion: '0.1.5',
     newVersion: false,
     defaultChannel: 'general',
     channels: {
@@ -31,6 +31,7 @@ const DEFAULT_STATE = {
     config: CONFIG,
     list: [],
     online: [],
+    highlighted: false,
     message: '',
     lock: true,
     channel: 'general',
@@ -42,7 +43,7 @@ const DEFAULT_STATE = {
 /**
  *
  * @param actions$
- * @returns {MemoryStream|MemoryStream<{list: Array, message: string}>}
+ * @returns {{state$: *, socket$: (*), history$: Function}}
  */
 export function model(actions) {
     const currentUser$ = actions.signature$.startWith(GUEST_USER);
@@ -72,7 +73,13 @@ export function model(actions) {
         });
 
     const userReducer$ = currentUser$.map(user => {
+        console.log(user);
         return state => Object.assign({}, state, {user});
+    });
+
+    const highlightReducer$ = actions.rhighlighted$.map(item => {
+        console.log(item);
+        return state => ({...state, highlighted: item});
     })
 
     const message$ = actions.msg$
@@ -102,7 +109,7 @@ export function model(actions) {
         .map(packed => state => {
             const channel = packed.channel || false;
 
-            return {...state, list: channel == false || state.channel == channel ? state.list.concat(packed.list) : state.list, missing: state.lock === false ? state.missing + packed.list.length : state.missing};
+            return {...state, list: channel == false || state.channel == channel || channel === 'log' ? state.list.concat(packed.list) : state.list, missing: state.lock === false ? state.missing + packed.list.length : state.missing};
         });
 
     /**
@@ -110,14 +117,14 @@ export function model(actions) {
      *
      * @type {*}
      */
-    const state$ = xs.merge(remoteConfig$, userReducer$, channelReducer$, messages$, message$, scroll$, onlineUsers$)
+    const state$ = xs.merge(remoteConfig$, userReducer$, channelReducer$, highlightReducer$, messages$, message$, scroll$, onlineUsers$)
         .fold((state, action) => action(state), DEFAULT_STATE)
         .startWith(DEFAULT_STATE);
 
     const socketSend$ = sent$.map(sent => (['send', sent.data.content]));
     const socketChannel$ = channel$.map(channel => (['chat update-me', channel]));
-    const muteUsers$ = actions.mute$.map(id => (['mute', id]));
-    const socket$ = xs.merge(socketChannel$, socketSend$, muteUsers$);
+    const adminActions$ = actions.idActions$.map(action => ([action.type, action.id]));
+    const socket$ = xs.merge(socketChannel$, socketSend$, adminActions$);
 
     return {
         state$,

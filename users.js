@@ -1,10 +1,9 @@
 var mori = require('mori');
 var schemas = require('./schemas');
-var featured = mori.queue();
 var users = mori.hashMap();
 var usersChannel = mori.hashMap();
 var online = mori.sortedSet();
-var banned = mori.hashMap();
+var banned = mori.set();
 var mute = mori.set();
 var exports = module.exports = {};
 
@@ -81,12 +80,15 @@ exports.onRemoveMuteUser = function (id) {
 }
 
 exports.onBanUser = function (id) {
-    banned = mori.conj(banned, id);
+    if (!mori.hasKey(banned, id)) {
+        banned = mori.conj(banned, id);
+        console.log('ban ' + id);
 
-    setTimeout(exports.onRemoveMuteUser.bind(this, id), 60 * 5 * 1000);
+        setTimeout(exports.onRemoveBanUser.bind(this, id), 60 * 60 * 24 * 1000);
+    }
 };
 
 exports.onRemoveBanUser = function (id) {
     banned = mori.disj(banned, id);
-    console.log('removed mute of ' + id);
+    console.log('removed ban of ' + id);
 }

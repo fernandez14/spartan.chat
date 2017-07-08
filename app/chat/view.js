@@ -221,7 +221,7 @@ function commandView(type, data, list, index, scrollHook, rolePower) {
             const role = new Array(nrole).fill();
 
             return li('.dt.hover-bg-near-white.w-100.ph3.pv2', scrollHook, [
-                div('.dtc.v-top.tc', {style: {width: '3rem'}}, simple == false ? img('.br-100', {attrs: {src: data.image ? data.image : 'images/avatar.svg'}}) : span('.f7.light-silver', hour(data.timestamp))),
+                div('.dtc.v-top.tc', {style: {width: '3rem'}}, simple == false ? img('.br-100.w2', {attrs: {src: data.image ? data.image : 'images/avatar.svg'}}) : span('.f7.light-silver', hour(data.timestamp))),
                 div('.dtc.v-top.pl3', [
                     simple == false ? span('.f6.f5-ns.fw6.lh-title.black.db.mb1', [
                         data.username,

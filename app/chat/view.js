@@ -103,11 +103,10 @@ export function view(state$) {
                 ])
             ])),
             div('.mw9.center.sans-serif.cf.flex.flex-column.flex-row-ns', {style: {height: '100%'}}, [
-                div('.fade-in.w-100.pl4-ns.pt4-ns', {class: {dn: channel.youtubePlayer === false}}, [
-                    channel.youtubePlayer === false ? div() : iframe('.bn.br2', {
+                div('.fade-in.w-100.pl4-ns.pt4-ns.flex.flex-column.pb4', {class: {dn: channel.youtubePlayer === false}}, [
+                    channel.youtubePlayer === false ? div() : iframe('.bn.br2.flex-auto', {
                         props: {
                             width: '100%',
-                            height: '300',
                             src: `https://www.youtube.com/embed/${channel.youtubeVideo}`,
                             frameborder: 0,
                             allowfullscreen: true
@@ -142,8 +141,8 @@ export function view(state$) {
                             }, 'Día de hueva'),
                             a('.dib.v-mid.link.black-60.dark.ph2.pointer.absolute.right-1.ba.b--light-gray.br2.ph2.pv1', onlineTippy, [
                                 span('.bg-green.br-100.dib.mr2', {style: {width: '10px', height: '10px'}}),
-                                span('.b', String(state.online.length) + ' '),
-                                span('.dn.dib-m.dib-l', `${state.online.length > 1 ? 'conectados' : 'conectado'}`),
+                                span('.b', state.channel != 'dia-de-hueva' ? String(state.online.length) + ' ' : ''),
+                                span('.dn.dib-m.dib-l', state.channel != 'dia-de-hueva' ? `${state.online.length > 1 ? 'conectados' : 'conectado'}` : ''),
                                 div('#online-users.dn', ul('.list.pa0.ma0.tc.overflow-auto', {style: {maxHeight: '300px'}}, state.online.map(u => {
                                     return li('.ph2.pv1', [
                                         img('.dib.v-mid.br-100', {

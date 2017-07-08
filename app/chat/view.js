@@ -145,7 +145,7 @@ export function view(state$) {
                             a('.dib.v-mid.link.black-60.dark.ph2.pointer.absolute.right-1.ba.b--light-gray.br2.ph2.pv1', onlineTippy, [
                                 span('.bg-green.br-100.dib.mr2', {style: {width: '10px', height: '10px'}}),
                                 span('.b', state.channel != 'dia-de-hueva' ? String(state.online.length) + ' ' : ''),
-                                span('.dn.dib-m.dib-l', state.channel != 'dia-de-hueva' ? `${state.online.length > 1 ? 'conectados' : 'conectado'}` : ''),
+                                span('.dn.dib-m.dib-l', `${state.online.length > 1 ? 'conectados' : 'conectado'}`),
                                 div('#online-users.dn', ul('.list.pa0.ma0.tc.overflow-auto', {style: {maxHeight: '300px'}}, state.online.map(u => {
                                     return li('.ph2.pv1', [
                                         img('.dib.v-mid.br-100', {

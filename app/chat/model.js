@@ -108,8 +108,13 @@ export function model(actions) {
     const messages$ = xs.merge(actions.messages$, packedSent$)
         .map(packed => state => {
             const channel = packed.channel || false;
+            let list = channel == false || state.channel == channel || channel === 'log' ? state.list.concat(packed.list) : state.list;
 
-            return {...state, list: channel == false || state.channel == channel || channel === 'log' ? state.list.concat(packed.list).slice(-100) : state.list, missing: state.lock === false ? state.missing + packed.list.length : state.missing};
+            if ((channel == false || state.channel == channel || channel === 'log') && state.lock) {
+                list = list.slice(-100);
+            } 
+
+            return {...state, list: list, missing: state.lock === false ? state.missing + packed.list.length : state.missing};
         });
 
     /**

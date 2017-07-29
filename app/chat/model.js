@@ -19,7 +19,6 @@ const CONFIG = {
     }
 };
 
-
 const GUEST_USER = {
     _id: false,
     username: 'guest',
@@ -73,12 +72,10 @@ export function model(actions) {
         });
 
     const userReducer$ = currentUser$.map(user => {
-        console.log(user);
         return state => Object.assign({}, state, {user});
     });
 
     const highlightReducer$ = actions.rhighlighted$.map(item => {
-        console.log(item);
         return state => ({...state, highlighted: item});
     })
 
@@ -137,7 +134,6 @@ export function model(actions) {
         history$: actions.channel$
     };
 }
-
 
 function list(...messages) {
     return {list: messages};

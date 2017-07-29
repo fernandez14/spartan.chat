@@ -34,7 +34,7 @@ const config = {
         'dia-de-hueva': {
             name: 'Día de hueva',
             youtubePlayer: true,
-            youtubeVideo: 'lmKn8P3zStE'
+            youtubeVideo: 'C4aLu-dq9iU'
         }
     }
 };

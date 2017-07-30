@@ -9,7 +9,8 @@ var md = markdown({
     html: false,
     linkify: true,
     typographer: false
-});
+}).disable('image');
+
 md.use(emoji);
 md.use(mila, {
     target: '_blank',

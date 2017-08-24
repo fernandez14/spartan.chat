@@ -218,6 +218,14 @@ chat.on('connection', function(socket) {
                     });
                 });
             }
+
+            // Admin & up.
+            if (rolePower > 2) {
+                socket.on('chat update-video', function(id) {
+                    config.channels['dia-de-hueva'].youtubeVideo = id;
+                    socket.emit('config', config);
+                });
+            }
         });
 
         return;

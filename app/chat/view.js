@@ -145,6 +145,15 @@ export function view(state$) {
                                 class: {b: state.channel == 'dia-de-hueva'},
                                 dataset: {id: 'dia-de-hueva'}
                             }, 'Día de hueva'),
+                            nrole >= 3 && channel.youtubePlayer !== false ? div('.dib.v-mid', [
+                                input('.pa2.input-reset.ba.bg-white.b--light-gray.bw1.near-black.br2.outline-0.w4', {
+                                    props: {
+                                        id: 'videoID',
+                                        type: 'text',
+                                        value: channel.youtubeVideo
+                                    }
+                                })
+                            ]) : div(),
                             a('.dib.v-mid.link.black-60.dark.ph2.pointer.absolute.right-1.ba.b--light-gray.br2.ph2.pv1', onlineTippy, [
                                 span('.bg-green.br-100.dib.mr2', {style: {width: '10px', height: '10px'}}),
                                 span('.b', state.channel != 'dia-de-hueva' ? String(state.online.length) + ' ' : ''),

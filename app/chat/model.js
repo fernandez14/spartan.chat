@@ -72,7 +72,7 @@ export function model(actions) {
         });
 
     const userReducer$ = currentUser$.map(user => {
-        return state => Object.assign({}, state, {user});
+        return state => ({...state, user});
     });
 
     const highlightReducer$ = actions.rhighlighted$.map(item => {
@@ -126,7 +126,8 @@ export function model(actions) {
     const socketSend$ = sent$.map(sent => (['send', sent.data.content]));
     const socketChannel$ = channel$.map(channel => (['chat update-me', channel]));
     const adminActions$ = actions.idActions$.map(action => ([action.type, action.id]));
-    const socket$ = xs.merge(socketChannel$, socketSend$, adminActions$);
+    const videoConfig$ = actions.videoConfig$.map(video => (['chat update-video', video]));
+    const socket$ = xs.merge(socketChannel$, socketSend$, adminActions$, videoConfig$);
 
     return {
         state$,

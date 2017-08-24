@@ -50,7 +50,6 @@ export function view(state$) {
         const channel = state.config.channels[state.channel];
         const nrole = ROLES[state.user.role];
         const onlineTippy = {
-            style: {top: '14px'},
             hook: {
                 insert(vnode) {
                     const tip = tippy(vnode.elm, {
@@ -152,9 +151,11 @@ export function view(state$) {
                                         type: 'text',
                                         value: channel.youtubeVideo
                                     }
-                                })
-                            ]) : div(),
-                            a('.dib.v-mid.link.black-60.dark.ph2.pointer.absolute.right-1.ba.b--light-gray.br2.ph2.pv1', onlineTippy, [
+                                }),
+                                input('.ml2.b--light-gray', {props: {type: 'checkbox', id: 'live', checked: channel.live}}),
+                                span('.ml2', 'Live')
+                            ]) : div('.dib'),
+                            a('.dib.v-mid.link.black-60.dark.pointer.ba.b--light-gray.br2.ph2.pv1.ml2', onlineTippy, [
                                 span('.bg-green.br-100.dib.mr2', {style: {width: '10px', height: '10px'}}),
                                 span('.b', state.channel != 'dia-de-hueva' ? String(state.online.length) + ' ' : ''),
                                 span('.dn.dib-m.dib-l', `${state.online.length > 1 ? 'conectados' : 'conectado'}`),

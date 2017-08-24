@@ -11,6 +11,7 @@ var schemas = require('./schemas');
 var security = require('./security');
 var users = require('./users');
 var pull = zmq.socket('pull');
+var fs = require('fs');
 
 program.version('0.1.5')
     .option('-p, --port <n>', 'Socket.IO port', parseInt, 3100)
@@ -29,12 +30,14 @@ const config = {
         'general': {
             name: 'General',
             youtubePlayer: false,
-            youtubeVideo: false
+            youtubeVideo: false,
+            live: false
         },
         'dia-de-hueva': {
             name: 'Día de hueva',
             youtubePlayer: true,
-            youtubeVideo: 'V1ZvNbQpbTY'
+            youtubeVideo: 'V1ZvNbQpbTY',
+            live: fs.existsSync('./livestreaming')
         }
     }
 };
@@ -224,6 +227,14 @@ chat.on('connection', function(socket) {
                 socket.on('chat update-video', function(id) {
                     config.channels['dia-de-hueva'].youtubeVideo = id;
                     socket.emit('config', config);
+                });
+                socket.on('chat update-live', function(live) {
+                    config.channels['dia-de-hueva'].live = live;
+                    if (live) {
+                        fs.closeSync(fs.openSync('./livestreaming', 'w'));
+                    } else {
+                        fs.unlinkSync('./livestreaming');
+                    }
                 });
             }
         });

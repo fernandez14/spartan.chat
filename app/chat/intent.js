@@ -51,6 +51,9 @@ export function intent(dom, socket, history$) {
     const videoConfig$ = dom.select('#videoID').events('change')
         .map(e => (String(e.target.value)));
 
+    const videoLive$ = dom.select('#live').events('change')
+        .map(e => (e.target.checked));
+
     const idActions$ = dom.select('.id-action').events('click')
         .map(e => ({type: e.target.dataset.type, id: e.target.dataset.id}));
 
@@ -65,5 +68,5 @@ export function intent(dom, socket, history$) {
             xs.empty()
     ).flatten();
 
-    return {config$, signature$, msg$, scroll$, messages$, highlighted$, rhighlighted$, channel$, idActions$, online$, fullReload$, pathname$, videoConfig$};
+    return {config$, signature$, msg$, scroll$, messages$, highlighted$, rhighlighted$, channel$, idActions$, online$, fullReload$, pathname$, videoConfig$, videoLive$};
 }

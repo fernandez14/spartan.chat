@@ -127,7 +127,8 @@ export function model(actions) {
     const socketChannel$ = channel$.map(channel => (['chat update-me', channel]));
     const adminActions$ = actions.idActions$.map(action => ([action.type, action.id]));
     const videoConfig$ = actions.videoConfig$.map(video => (['chat update-video', video]));
-    const socket$ = xs.merge(socketChannel$, socketSend$, adminActions$, videoConfig$);
+    const videoLive$ = actions.videoLive$.map(live => (['chat update-live', live]));
+    const socket$ = xs.merge(socketChannel$, socketSend$, adminActions$, videoConfig$, videoLive$);
 
     return {
         state$,

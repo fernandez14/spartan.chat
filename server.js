@@ -14,8 +14,8 @@ var pull = zmq.socket('pull');
 var fs = require('fs');
 
 program.version('0.1.5')
-    .option('-p, --port <n>', 'Socket.IO port', parseInt, 3100)
-    .option('-z, --zmq <n>', 'ZMQ pull server port', parseInt, 5557)
+    .option('--port <n>', 'Socket.IO port', 3100)
+    .option('--zmq <n>', 'ZMQ pull server port', 5557)
     .option('-db, --mongo <url>', 'MongoDB connection URL.')
     .option('-secret, --jwt_secret <secret>', 'JWT secret.')
     .parse(process.argv);

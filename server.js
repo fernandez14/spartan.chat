@@ -15,14 +15,14 @@ var fs = require('fs');
 
 program.version('0.1.5')
     .option('-p, --port <n>', 'Socket.IO port', parseInt, 3100)
-    .option('-z, --zmq', 'ZMQ pull server port')
+    .option('-z, --zmq', 'ZMQ pull server port', parseInt, 5557)
     .option('-db, --mongo <url>', 'MongoDB connection URL.')
     .option('-secret, --jwt_secret <secret>', 'JWT secret.')
     .parse(process.argv);
 
 // Attempt to connect to data source & zmq
 mongoose.connect(program.mongo, {useMongoClient: true});
-pull.bind('tcp://127.0.0.1:5557');
+pull.bind('tcp://127.0.0.1:' + String(program.zmq));
 
 const config = {
     serverVersion: program.version(),
@@ -69,6 +69,7 @@ const zmq$ = xs.create({
     eventListener: null,
     start(listener) {
         this.eventListener = pull.on('message', args => {
+            console.log('Received message', args.toString());
             return listener.next(JSON.parse(args.toString()));
         });
     },
@@ -250,5 +251,6 @@ chat.on('connection', function(socket) {
 
 
 http.listen(program.port, function() {
-    console.log('listening on *:3100');
+    console.log('Spawning http server on *:' + String(program.port));
+    console.log('Pulling zmq messages from *:' + String(program.zmq));
 });

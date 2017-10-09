@@ -104,12 +104,14 @@ chat.on('connection', function(socket) {
     socket.on('chat update-me', function() {
         const list = m.list(...m.lastMessages());
 
-        // Keep an eye of where the user is located.
-        users.location(user_id, 'chat');
-        users.online(user_id);
-        
-        socket.emit('online-list', users.onlineUsers());
-        socket.broadcast.emit('online-list', users.onlineUsers());
+        if (user_id) {
+            // Keep an eye of where the user is located.
+            users.location(user_id, 'chat');
+            users.online(user_id);
+
+            socket.emit('online-list', users.onlineUsers());
+            socket.broadcast.emit('online-list', users.onlineUsers());
+        }
 
         socket.join('chat:feed');
         socket.emit('messages', list);

@@ -107,8 +107,9 @@ chat.on('connection', function(socket) {
         // Keep an eye of where the user is located.
         users.location(user_id, 'chat');
         users.online(user_id);
-        socket.emit('online-list', online);
-        socket.broadcast.emit('online-list', online);
+        
+        socket.emit('online-list', users.onlineUsers());
+        socket.broadcast.emit('online-list', users.onlineUsers());
 
         socket.join('chat:feed');
         socket.emit('messages', list);

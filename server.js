@@ -107,7 +107,7 @@ chat.on('connection', function(socket) {
         // Keep an eye of where the user is located.
         users.location(user_id, 'chat');
         users.online(user_id);
-        
+
         socket.join('chat:feed');
         socket.emit('messages', list);
         socket.emit('chat.count', users.chatCount());
@@ -156,7 +156,7 @@ chat.on('connection', function(socket) {
                 m.pushHistory(msg);
 
                 // Finally push to the history.
-                //m.saveMessage(channel, msg);
+                m.saveMessage('general', msg);
             });
 
             socket.emit('online-list', online);

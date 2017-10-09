@@ -7,7 +7,6 @@ var banned = mori.set();
 var mute = mori.set();
 var exports = module.exports = {};
 
-
 exports.online = function (id) {
     const old = online;
     online = mori.conj(online, id);
@@ -18,6 +17,7 @@ exports.online = function (id) {
 exports.offline = function (id) {
     const old = online;
     online = mori.disj(online, id);
+    usersChannel = mori.dissoc(usersChannel, id);
 
     return mori.equals(old, online);
 };
@@ -29,7 +29,11 @@ exports.channel = function(id, channel = false) {
 
     usersChannel = mori.assoc(usersChannel, id, channel);
     return true;
-}
+};
+
+exports.connectedCount = function (channel = false) {
+    return mori.count(usersChannel);
+};
 
 exports.onlineUsers = function () {
     const map = users;

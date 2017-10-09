@@ -87,7 +87,6 @@ io.on('connection', function(socket) {
     };
 
     zmq$.addListener(global);
-    console.log('connected client ', socket.id)
 });
 
 const chat = io.of('/chat').use(jwtMiddleware);
@@ -97,23 +96,36 @@ chat.on('connection', function(socket) {
     const user_id = token.user_id || false;
     const id = socket.id;
 
+    // Start by leting peer know how many people is inside...
+    socket.emit('connected.count', users.connectedCount());
+
     socket.on('chat update-me', function(channel) {
         channel = String(channel);
 
         if (channel in config.channels) {
             const list = m.list(channel, ...m.lastMessages(channel));
-
             socket.emit('chat '+channel, list);
             socket.emit('messages', list);
             socket.join('room:' + channel);
-            users.channel(id, channel);
+            users.channel(user_id, channel);
+
+            socket.emit('connected.count', users.connectedCount());
+            socket.broadcast.emit('connected.count', users.connectedCount());
         }
     });
 
     socket.emit('config', config);
+    socket.on('chat disconnect', function() {
+        if (user_id) {
+            users.offline(user_id);
+            socket.emit('connected.count', users.connectedCount());
+            socket.broadcast.emit('connected.count', users.connectedCount());
+        }
+    })
     socket.on('disconnect', function() {
         if (user_id) {
             users.offline(user_id);
+            socket.broadcast.emit('connected.count', users.connectedCount());
         }
     });
 

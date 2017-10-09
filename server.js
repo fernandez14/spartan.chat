@@ -106,7 +106,8 @@ chat.on('connection', function(socket) {
 
         // Keep an eye of where the user is located.
         users.location(user_id, 'chat');
-
+        users.online(user_id);
+        
         socket.join('chat:feed');
         socket.emit('messages', list);
         socket.emit('chat.count', users.chatCount());
@@ -136,8 +137,6 @@ chat.on('connection', function(socket) {
 
     if (user_id) {
         users.one(user_id, user => {
-            users.online(user_id);
-
             const perms = roles[user.role];
             const online = users.onlineUsers();
 

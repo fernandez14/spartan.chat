@@ -4,8 +4,8 @@ var mongoose = require('mongoose');
 var schemas = require('./schemas');
 var featured = mori.queue();
 
-exports.list = function (channel, ...messages) {
-    return {list: messages, channel};
+exports.list = function (...messages) {
+    return {list: messages};
 };
 
 exports.userMessage = function (user, message) {
@@ -23,23 +23,16 @@ exports.userMessage = function (user, message) {
     };
 };
 
-var history = {};
 
-exports.lastMessages = function (channel) {
-    const ready = history[channel] || false;
-    const messages = history[channel] || [];
+var history = [];
 
-    if (ready === false) {
-        history[channel] = [];
-    }
-
-    return messages;
+exports.lastMessages = function () {
+    return history;
 };
 
-exports.pushHistory = function (channel, message) {
-    const messages = history[channel] || [];
-
-    history[channel] = messages.concat([message]).slice(-100);
+exports.pushHistory = function (message) {
+    history = history.concat([message]).slice(-100);
+    return history;
 };
 
 exports.saveMessage = function(channel, message) {

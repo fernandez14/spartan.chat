@@ -2,6 +2,7 @@ var mori = require('mori');
 var schemas = require('./schemas');
 var users = mori.hashMap();
 var usersChannel = mori.hashMap();
+var usersLocation = mori.hashMap();
 var online = mori.sortedSet();
 var banned = mori.set();
 var mute = mori.set();
@@ -18,8 +19,18 @@ exports.offline = function (id) {
     const old = online;
     online = mori.disj(online, id);
     usersChannel = mori.dissoc(usersChannel, id);
+    usersLocation = mori.assoc(usersLocation, id, 'unknown');
 
     return mori.equals(old, online);
+};
+
+exports.location = function(userID, location = false) {
+    if (location == false) {
+        return mori.get(usersLocation, userID);
+    }
+
+    usersLocation = mori.assoc(usersLocation, userID, location);
+    return;
 };
 
 exports.channel = function(id, channel = false) {
@@ -31,8 +42,11 @@ exports.channel = function(id, channel = false) {
     return true;
 };
 
-exports.connectedCount = function (channel = false) {
-    return mori.count(usersChannel);
+exports.chatCount = function () {
+    return mori.reduceKV((acc, k, v) => {
+        // Count users located in chat.
+        return acc + (v == 'chat' ? 1 : 0);
+    }, 0, usersLocation);
 };
 
 exports.onlineUsers = function () {

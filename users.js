@@ -69,7 +69,8 @@ exports.one = function (id, callback) {
             _id: String(usr._id),
             image: usr.image,
             role: usr.role,
-            username: usr.username
+            username: usr.username,
+            validated: usr.validated
         };
 
         users = mori.assoc(users, id, signature);

@@ -63,7 +63,7 @@ exports.one = function (id, callback) {
         return callback(mori.get(users, id));
     }
 
-    schemas.User.findById(id, 'username image roles', (err, user) => {
+    schemas.User.findById(id, 'username image roles validated', (err, user) => {
         const usr = user.toObject({ virtuals: true });
         const signature = {
             _id: String(usr._id),

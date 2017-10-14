@@ -29,8 +29,8 @@ const config = {
     viewer: {
         title: 'Buldar Chat',
         subtitle: 'Conversaciones en tiempo real. Guerras de GIFs. Consejos que ayudarán o arruinarán tu vida.',
-        youtubePlayer: false,
-        youtubeVideo: 'lvDt7ghfsCk',
+        youtubePlayer: true,
+        youtubeVideo: 'gAvrTPXRxQE',
         live: fs.existsSync('./livestreaming')
     }
 };
@@ -151,8 +151,7 @@ chat.on('connection', function(socket) {
 
             socket.on('send', function(message) {
                 // Block message if needed.
-                //  || false === security.viableMessage(user, channel, message)
-                if (users.isBlocked(user_id)) {
+                if (user.validated == false || users.isBlocked(user_id) || false === security.viableMessage(user, 'general', message)) {
                     return;
                 }
 
